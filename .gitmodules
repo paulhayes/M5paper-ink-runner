@@ -1,0 +1,3 @@
+[submodule "inkcpp"]
+	path = inkcpp
+	url = ./lib/inkcpp
