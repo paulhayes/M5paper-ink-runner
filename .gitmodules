@@ -1,3 +1,6 @@
 [submodule "inkcpp"]
 	path = inkcpp
 	url = ./lib/inkcpp
+[submodule "lib/inkcpp"]
+	path = lib/inkcpp
+	url = git@github.com:paulhayes/inkcpp.git
