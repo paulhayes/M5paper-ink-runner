@@ -20,6 +20,15 @@ void setup()
 
 void loop()
 {
-
-
+    //load content
+    //while running
+        //while can stroy continue
+            //get next paragraph of story
+            //get tags
+            //pagnate content where neccessary
+        //end while
+        //wait for user input choice
+        //select choice
+        
+    //endwhile
 }
