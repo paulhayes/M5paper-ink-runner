@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <M5EPD.h>
-#include <story.h>
-#include <runner.h>
-#include <choice.h>
+// #include <story.h>
+// #include <runner.h>
+// #include <choice.h>
 
 M5EPD_Canvas canvas(&M5.EPD);
 
