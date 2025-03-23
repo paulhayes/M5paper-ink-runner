@@ -8,15 +8,17 @@
 #include <choice.h>
 
 using namespace ink::runtime;
-ink::runtime::globals globalVars;
+ink::runtime::globals global_vars;
 
 M5EPD_Canvas canvas(&M5.EPD);
+M5EPD_Canvas selected_icon(&M5.EPD);
+M5EPD_Canvas unselected_icon(&M5.EPD);
 
 story *myInk;
 runner _thread;
 
-int cursorX = 0;
-int cursorY = 0;
+int cursor_x = 0;
+int cursor_y = 0;
 int padding = 5;
 int current_indent = padding;
 
@@ -28,25 +30,51 @@ char* story_filename;
 
 void next_line()
 {
-    cursorY += canvas.fontHeight();
-    cursorX = current_indent;
+    cursor_y += canvas.fontHeight();
+    cursor_x = current_indent;
 }
 
 void draw_selection_cursor()
 {
     for(int i=0;i<num_choice_pos;i++){
-        canvas.setTextColor(i==current_choice?15:0);
-        //canvas.drawChar('>',0,choice_positions[i]);
-        canvas.drawString(">",0,choice_positions[i]);
+        M5EPD_Canvas* icon = (i==current_choice)? &selected_icon: &unselected_icon;
+        icon->pushCanvas(5,choice_positions[i],UPDATE_MODE_DU4);
     }
-    canvas.setTextColor(15);
-    //canvas.drawString("moop",0,100);
-    Serial.println("pushCanvas UPDATE_MODE_DU4");
-    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
 }
 
-void check_selection()
+bool check_selection()
 {
+    M5.TP.update();
+    if(M5.TP.available() && !M5.TP.isFingerUp()){
+        
+        tp_finger_t finger = M5.TP.readFinger(0);
+        // Serial.print("x=");
+        // Serial.print(finger.x);
+        // Serial.print("y=");
+        // Serial.print(finger.y);
+        // Serial.println("");
+
+        for(int i=0;i<num_choice_pos;i++){
+            int maxY = choice_positions[i]+canvas.fontHeight();
+            bool inY = finger.y>choice_positions[i] && finger.y<maxY;
+            if(inY){
+                current_choice=i;
+                draw_selection_cursor();
+                while(!M5.TP.isFingerUp()){
+                    finger = M5.TP.readFinger(0);
+                    delay(5);
+                    M5.TP.update();
+                }
+                inY = finger.y>choice_positions[i] && finger.y<maxY;
+                if(inY){
+                    Serial.println("finger up inside of bounds");
+                    return true;
+                }
+                Serial.println("finger up outside of bounds");
+                return false;
+            }
+        }
+    }
     if( M5.BtnL.wasPressed() ){
         Serial.println('-');
         current_choice--;
@@ -63,41 +91,84 @@ void check_selection()
         }
         draw_selection_cursor();
     }    
+    if(M5.BtnP.wasPressed()){
+        Serial.println("button down");
+        return true;
+    }
+    return false;
 }
 
 
 void select_file()
 {
+    canvas.clear();
+    canvas.drawString("Select Story", 0, 0);
     File root = SPIFFS.open("/");
     File file;
-    const char *files[10];
+    char *files[10];
     int num_files=0;
     while(file=root.openNextFile()){
         const char* name=file.name();
         int len=strlen(name);
-        Serial.println(name);
         if( strcmp(name+len-4,".bin")==0 ){
-            files[num_files]=name;
-            int y=100+num_files*canvas.fontHeight();
+            Serial.println(name);
+            files[num_files]=(char*)malloc(len);
+            strcpy(files[num_files],name);
+            int y=100+num_files*2*canvas.fontHeight();
             choice_positions[num_files]=y;
-            //canvas.drawCentreString(name,canvas.width()/2,y,0);
+            //canvas.drawCentreString(name,canvas.width()/2,y,1);
             canvas.drawString(name,100,y);
             num_files++;
         }
-        num_choice_pos=num_files;
         file.close();
     }
-    draw_selection_cursor();
-    while(!M5.BtnP.wasPressed()){
-        check_selection();
-        M5.update();
-    }
     
+    num_choice_pos=num_files;
+    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+    draw_selection_cursor();
+    M5.update();
+    while(!check_selection()){
+        M5.update();
+        delay(10);
+    }
+    Serial.print("Option ");
+    Serial.print(current_choice);
+    Serial.print(" ");
+    Serial.print(files[current_choice]);
+    Serial.println(" selected");
     const char* filename = files[current_choice];
     int filename_len = strlen(filename);
     story_filename = (char*)malloc(filename_len+2);
     story_filename[0]='/';
     strcpy(story_filename+1,filename);
+
+    current_choice=0;
+    num_choice_pos=0;
+
+    Serial.print("Opening ");
+    Serial.println(story_filename);
+    Serial.println(filename);
+    file = SPIFFS.open(story_filename);
+    const int test_story_bin_len = file.size();
+    char* test_story_bin = (char*)malloc(test_story_bin_len);
+    file.readBytes(test_story_bin,test_story_bin_len);
+    if(myInk){
+        delete myInk;
+        //delete _thread.get();
+    }
+    myInk = story::from_binary((unsigned char*)(test_story_bin), test_story_bin_len, true);
+    //global_vars = ink::runtime::globals();
+    // Create a new thread
+
+    _thread = myInk->new_runner();
+    //_thread = thread;
+    if (!_thread.is_valid())
+    {
+        Serial.println("Invalid binary story file");        
+    }
+    free(story_filename);
+    file.close();
+    root.close();
 }
 
 const char *strnchr(const char* ptr, int ch, size_t size) {
@@ -129,7 +200,7 @@ void word_wrap(const char *line_c)
         strcpy(line,current);
         remaining = current + strlen(current);
         int search_len = strlen(current);
-        while ((canvas.width() - (padding + cursorX)) < canvas.textWidth(line))
+        while ((canvas.width() - (padding + cursor_x)) < canvas.textWidth(line))
         {
             //Serial.print("Finding last space in :");
             //Serial.println(current);
@@ -137,10 +208,10 @@ void word_wrap(const char *line_c)
             if (last == NULL)
             {
                 last = current + search_len - 1;
-                Serial.println("substract character");
+                //Serial.println("substract character");
             }
             else {
-                Serial.println("substract word");
+                //Serial.println("substract word");
             }            
             search_len = last-current;
             //strncpy(line,current,search_len);
@@ -157,7 +228,7 @@ void word_wrap(const char *line_c)
             // Serial.print(cursorY);
             // Serial.print(" ");
             // Serial.println(line);
-            canvas.drawString(line, cursorX, cursorY);
+            canvas.drawString(line, cursor_x, cursor_y);
         }
         next_line();
         current = remaining;
@@ -178,7 +249,7 @@ void word_wrap(const char *line_c)
 
 void write_paragraph()
 {
-    while (_thread->can_continue() && cursorY<(canvas.height()-canvas.fontHeight()))
+    while (_thread->can_continue() && cursor_y<(canvas.height()-canvas.fontHeight()))
     {
         // Serial.print("Free heap size ");
         // Serial.println(ESP.getFreeHeap());
@@ -214,8 +285,10 @@ void write_choices()
         {
             auto text = _thread->get_choice(i)->text();
             //Serial.println(text);
-            Serial.println(cursorY);
-            choice_positions[i] = cursorY;
+            Serial.print(i);
+            Serial.print(" ");
+            Serial.println(text);
+            choice_positions[i] = cursor_y;
             word_wrap(text);
             next_line();
         }
@@ -230,16 +303,18 @@ void write_choices()
 void redraw()
 {
     Serial.println("redraw");
-    cursorX = current_indent = padding;
-    cursorY = 10;
+    canvas.clear();
+    cursor_x = current_indent = padding;
+    cursor_y = 10;
     write_paragraph();
-    current_indent = 20;
+    current_indent = 40;
     next_line();
     write_choices();
-    draw_selection_cursor();
-    Serial.println("Redraw complete");
     //canvas.drawString("Hello World", 0, 0);
-    //canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+    draw_selection_cursor();
+    
+    Serial.println("Redraw complete");
 }
 
 void setup()
@@ -259,63 +334,48 @@ void setup()
 
     M5.begin();
     M5.EPD.SetRotation(90);
+    M5.TP.SetRotation(90);
     M5.EPD.Clear(true);
     M5.RTC.begin();
     canvas.createCanvas(540, 960);
-    // auto h = canvas.fontHeight();
     canvas.setTextSize(3);
-    canvas.drawString("Hello World", 0, 0);
+    int icon_w=canvas.textWidth(">");
+    int icon_h=canvas.fontHeight();
+    selected_icon.createCanvas(icon_w,icon_h);
+    unselected_icon.createCanvas(icon_w,icon_h);
+    selected_icon.setTextSize(3);
+    selected_icon.setTextColor(15);
+    selected_icon.drawString(">",0,0);
+    unselected_icon.setTextSize(3);
+    unselected_icon.setTextColor(0);
+    unselected_icon.drawString(">",0,0);
+
+    // auto h = canvas.fontHeight();
+    
     // canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
 
     select_file();
-
-    File file = SPIFFS.open(story_filename);
-    const int test_story_bin_len = file.size();
-    char* test_story_bin = (char*)malloc(test_story_bin_len);
-    file.readBytes(test_story_bin,test_story_bin_len);
-    myInk = story::from_binary((unsigned char*)(test_story_bin), test_story_bin_len, false);
-
-    // Create a new thread
-    _thread = myInk->new_runner(globalVars);
-    //_thread = thread;
-    if (!_thread.is_valid())
-    {
-        Serial.println("Invalid binary story file");
-        return;
-    }
-
     redraw();
 }
 
 
 void loop()
 {
-    check_selection();
-    if(M5.BtnP.wasPressed() && num_choice_pos>0){
-        if(num_choice_pos>0){
-            Serial.print("> user selected ");
-            Serial.println(current_choice);        
-            _thread->choose(current_choice);
-            current_choice=0;
-            num_choice_pos=0;    
-        }
-        else {
-            Serial.print("next");
-        }
-        canvas.clear();
-        redraw();
-        
-    }
-    delay(10);
+    delay(20);
     M5.update();
-    // while running
-    // while can story continue
-    // get next paragraph of story
-    // get tags
-    // pagnate content where neccessary
-    // end while
-    // wait for user input choice
-    // select choice
-
-    // endwhile
+    if(num_choice_pos==0){
+        if(M5.BtnP.wasPressed()){
+            select_file();
+            redraw();        
+        }
+    }
+    else if(check_selection()){
+        Serial.print("> user selected ");
+        Serial.println(current_choice);        
+        _thread->choose(current_choice);
+        current_choice=0;
+        num_choice_pos=0;
+        redraw();
+    }
+    
 }
