@@ -24,11 +24,80 @@ int choice_positions[10];
 int num_choice_pos = 0;
 int current_choice = 0;
 
+char* story_filename;
 
 void next_line()
 {
     cursorY += canvas.fontHeight();
     cursorX = current_indent;
+}
+
+void draw_selection_cursor()
+{
+    for(int i=0;i<num_choice_pos;i++){
+        canvas.setTextColor(i==current_choice?15:0);
+        //canvas.drawChar('>',0,choice_positions[i]);
+        canvas.drawString(">",0,choice_positions[i]);
+    }
+    canvas.setTextColor(15);
+    //canvas.drawString("moop",0,100);
+    Serial.println("pushCanvas UPDATE_MODE_DU4");
+    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+}
+
+void check_selection()
+{
+    if( M5.BtnL.wasPressed() ){
+        Serial.println('-');
+        current_choice--;
+        if(current_choice<0){
+            current_choice=num_choice_pos-1;
+        }
+        draw_selection_cursor();
+    }
+    if(M5.BtnR.wasPressed()){
+        Serial.println('+');
+        current_choice++;
+        if(current_choice>=num_choice_pos){
+            current_choice=0;
+        }
+        draw_selection_cursor();
+    }    
+}
+
+
+void select_file()
+{
+    File root = SPIFFS.open("/");
+    File file;
+    const char *files[10];
+    int num_files=0;
+    while(file=root.openNextFile()){
+        const char* name=file.name();
+        int len=strlen(name);
+        Serial.println(name);
+        if( strcmp(name+len-4,".bin")==0 ){
+            files[num_files]=name;
+            int y=100+num_files*canvas.fontHeight();
+            choice_positions[num_files]=y;
+            //canvas.drawCentreString(name,canvas.width()/2,y,0);
+            canvas.drawString(name,100,y);
+            num_files++;
+        }
+        num_choice_pos=num_files;
+        file.close();
+    }
+    draw_selection_cursor();
+    while(!M5.BtnP.wasPressed()){
+        check_selection();
+        M5.update();
+    }
+    
+    const char* filename = files[current_choice];
+    int filename_len = strlen(filename);
+    story_filename = (char*)malloc(filename_len+2);
+    story_filename[0]='/';
+    strcpy(story_filename+1,filename);
 }
 
 const char *strnchr(const char* ptr, int ch, size_t size) {
@@ -156,18 +225,7 @@ void write_choices()
     }
 }
 
-void draw_selection_cursor()
-{
-    for(int i=0;i<num_choice_pos;i++){
-        canvas.setTextColor(i==current_choice?15:0);
-        //canvas.drawChar('>',0,choice_positions[i]);
-        canvas.drawString(">",0,choice_positions[i]);
-    }
-    canvas.setTextColor(15);
-    //canvas.drawString("moop",0,100);
-    Serial.println("pushCanvas UPDATE_MODE_DU4");
-    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-}
+
 
 void redraw()
 {
@@ -197,7 +255,21 @@ void setup()
     Serial.println("Testing...");
     // load content
 
-    File file = SPIFFS.open("/story.bin");
+    Serial.println("Test Done");
+
+    M5.begin();
+    M5.EPD.SetRotation(90);
+    M5.EPD.Clear(true);
+    M5.RTC.begin();
+    canvas.createCanvas(540, 960);
+    // auto h = canvas.fontHeight();
+    canvas.setTextSize(3);
+    canvas.drawString("Hello World", 0, 0);
+    // canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+
+    select_file();
+
+    File file = SPIFFS.open(story_filename);
     const int test_story_bin_len = file.size();
     char* test_story_bin = (char*)malloc(test_story_bin_len);
     file.readBytes(test_story_bin,test_story_bin_len);
@@ -212,39 +284,13 @@ void setup()
         return;
     }
 
-    Serial.println("Test Done");
-
-    M5.begin();
-    M5.EPD.SetRotation(90);
-    M5.EPD.Clear(true);
-    M5.RTC.begin();
-    canvas.createCanvas(540, 960);
-    // auto h = canvas.fontHeight();
-    canvas.setTextSize(3);
-    // canvas.drawString("Hello World", 0, 0);
-    // canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-
     redraw();
 }
 
+
 void loop()
 {
-    if( M5.BtnL.wasPressed() ){
-        Serial.println('-');
-        current_choice--;
-        if(current_choice<0){
-            current_choice=num_choice_pos-1;
-        }
-        draw_selection_cursor();
-    }
-    if(M5.BtnR.wasPressed()){
-        Serial.println('+');
-        current_choice++;
-        if(current_choice>=num_choice_pos){
-            current_choice=0;
-        }
-        draw_selection_cursor();
-    }
+    check_selection();
     if(M5.BtnP.wasPressed() && num_choice_pos>0){
         if(num_choice_pos>0){
             Serial.print("> user selected ");
