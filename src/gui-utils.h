@@ -4,7 +4,7 @@
 
 void next_line();
 void draw_selection_cursor();
-char* select_file();
+char* select_file(const char* title);
 bool check_selection();
 void word_wrap(const char *line_c);
 bool cursor_inside_canvas();
@@ -17,6 +17,6 @@ void add_choice_option(const char* name);
 void add_choice_option(const char* name,int x, int y);
 void clear_choices();
 void set_indent(int indent);
-void set_font(const char* fontFilename);
+void load_font(const char* fontFilename);
 
 #endif

@@ -10,7 +10,7 @@ char* story_filename;
 
 void select_story()
 {
-    story_filename=select_file();
+    story_filename=select_file("Select Story");
     load_story(story_filename);
     free(story_filename);  
     contine_story();
@@ -37,7 +37,7 @@ void setup()
     M5.EPD.Clear(true);
     M5.RTC.begin();
     
-    //set_font("/Roboto-Black.ttf");
+    //load_font("/Roboto-Black.ttf");
     
     setup_gui();
 
@@ -55,6 +55,7 @@ void loop()
         }
     }
     else if(check_selection()){
+        
         Serial.print("> user selected ");
         Serial.println(get_current_choice());        
         story_choice(get_current_choice());
