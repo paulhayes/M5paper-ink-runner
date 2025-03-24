@@ -11,10 +11,10 @@ int num_choice_pos = 0;
 int current_choice = 0;
 
 
-int cursor_x = 0;
-int cursor_y = 0;
 int padding = 5;
 int current_indent = padding;
+int cursor_x = padding;
+int cursor_y = 0;
 
 void next_line()
 {
@@ -79,17 +79,17 @@ bool check_selection()
         }
         draw_selection_cursor();
     }    
-    if(M5.BtnP.wasPressed()){
+    if(M5.BtnP.wasPressed() && current_choice!=0){
         Serial.println("button down");
         return true;
     }
     return false;
 }
 
-char* select_file()
+char* select_file(const char* title)
 {
     canvas.clear();
-    canvas.drawString("Select Story", 0, 0);
+    canvas.drawString(title, cursor_x, cursor_y);
     File root = SPIFFS.open("/");
     File file;
     char *files[10];
@@ -282,7 +282,7 @@ void add_choice_option(const char* text,int x, int y)
 }
 void clear_choices(){
     num_choice_pos=0;
-    current_choice=0;
+    current_choice=-1;
 }
 
 void set_indent(int indent)
@@ -290,7 +290,7 @@ void set_indent(int indent)
     current_indent = indent;
 }
 
-void set_font(const char* fontFilename)
+void load_font(const char* fontFilename)
 {
     canvas.loadFont(fontFilename,SPIFFS);
     canvas.setTextColor(15);
