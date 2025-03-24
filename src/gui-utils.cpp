@@ -79,7 +79,7 @@ bool check_selection()
         }
         draw_selection_cursor();
     }    
-    if(M5.BtnP.wasPressed() && current_choice!=0){
+    if(M5.BtnP.wasPressed() && current_choice>=0){
         Serial.println("button down");
         return true;
     }
