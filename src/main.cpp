@@ -8,6 +8,14 @@
 
 char* story_filename;
 
+void select_story()
+{
+    story_filename=select_file();
+    load_story(story_filename);
+    free(story_filename);  
+    contine_story();
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -29,14 +37,11 @@ void setup()
     M5.EPD.Clear(true);
     M5.RTC.begin();
     
+    //set_font("/Roboto-Black.ttf");
+    
     setup_gui();
 
-    // auto h = canvas.fontHeight();
-    
-    // canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-
-    select_file();
-    contine_story();
+    select_story();
 }
 
 
@@ -46,10 +51,7 @@ void loop()
     M5.update();
     if(get_num_choices()==0){
         if(M5.BtnP.wasPressed()){
-            story_filename=select_file();
-            load_story(story_filename);
-            free(story_filename);  
-            contine_story();
+            select_story();
         }
     }
     else if(check_selection()){

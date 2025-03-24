@@ -200,10 +200,7 @@ void word_wrap(const char *line_c)
         // Serial.print(" ");
         // Serial.print((int)(all + len));
         // Serial.println(" ");
-        if ((i++) > 5)
-        {
-            break;
-        }
+        
         //Serial.println("next line");
     } while (remaining < all + len);
     free(all);
@@ -215,21 +212,35 @@ bool cursor_inside_canvas()
     return cursor_y<(canvas.height()-canvas.fontHeight());
 }
 
+void copyRect(M5EPD_Canvas *src, M5EPD_Canvas *dst, int w, int h)
+{
+    for(int x=0;x<w;x++){
+        for(int y=0;y<h;y++){
+            dst->drawPixel( x,y,src->readPixel(x,y) );
+        }
+    }
+}
+
 void setup_gui()
 {
+    const int textSize=2;
     canvas.createCanvas(540, 960);
-    canvas.setTextSize(3);
+    canvas.setTextSize(textSize);
+    canvas.setTextFont(2);
     int icon_w=canvas.textWidth(">");
     int icon_h=canvas.fontHeight();
     selected_icon.createCanvas(icon_w,icon_h);
     unselected_icon.createCanvas(icon_w,icon_h);
-    selected_icon.setTextSize(3);
-    selected_icon.setTextColor(15);
-    selected_icon.drawString(">",0,0);
-    unselected_icon.setTextSize(3);
-    unselected_icon.setTextColor(0);
-    unselected_icon.drawString(">",0,0);
+    canvas.setTextColor(15);
+    canvas.drawString(">",0,0);
+    copyRect(&canvas,&selected_icon,icon_w,icon_h);
+    canvas.setTextColor(0);
+    canvas.drawString(">",0,0);
+    canvas.setTextColor(15);
+    copyRect(&canvas,&unselected_icon,icon_w,icon_h);
 }
+
+
 
 void gui_clear()
 {
@@ -240,7 +251,7 @@ void gui_clear()
 
 void gui_draw()
 {
-    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+    canvas.pushCanvas(0, 0, UPDATE_MODE_DU);
 }
 
 int get_num_choices()
@@ -260,10 +271,13 @@ void add_choice_option(const char* name)
     add_choice_option(name,cursor_x,cursor_y);
 }
 
-void add_choice_option(const char* name,int x, int y)
+void add_choice_option(const char* text,int x, int y)
 {
     choice_positions[num_choice_pos]=y;
-    canvas.drawString(name,100,y);
+    //canvas.drawString(name,100,y);
+    cursor_x=x;
+    cursor_y=y;
+    word_wrap(text);
     num_choice_pos++;
 }
 void clear_choices(){
@@ -274,4 +288,12 @@ void clear_choices(){
 void set_indent(int indent)
 {
     current_indent = indent;
+}
+
+void set_font(const char* fontFilename)
+{
+    canvas.loadFont(fontFilename,SPIFFS);
+    canvas.setTextColor(15);
+    canvas.createRender(3);
+    canvas.createRender(32,256);
 }
