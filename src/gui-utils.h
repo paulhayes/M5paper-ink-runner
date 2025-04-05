@@ -6,7 +6,7 @@ void next_line();
 void draw_selection_cursor();
 char* select_file(const char* title);
 bool check_selection();
-void word_wrap(const char *line_c);
+const char* word_wrap(const char *line_c);
 bool cursor_inside_canvas();
 void setup_gui();
 void gui_clear();

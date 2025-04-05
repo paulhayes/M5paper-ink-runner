@@ -18,7 +18,7 @@ void contine_story()
     Serial.println("contine story");
     gui_clear();
     
-    write_paragraph();
+    write_story_section();
     set_indent(40);
     next_line();
     write_choices();
@@ -29,7 +29,7 @@ void contine_story()
     Serial.println("Redraw complete");
 }
 
-void write_paragraph()
+void write_story_section()
 {
     while (_thread->can_continue() && cursor_inside_canvas())
     {
@@ -37,11 +37,12 @@ void write_paragraph()
         // Serial.println(ESP.getFreeHeap());
 
         auto line_c = _thread->getline_alloc();
-
+        
         if (line_c != NULL)
         {
             Serial.println(line_c);
-            word_wrap(line_c);
+            auto remaining = word_wrap(line_c);
+            
         }
         else
         {
@@ -56,9 +57,11 @@ void write_paragraph()
 void write_choices()
 {
     next_line();
+    clear_choices();
     // Iterate choices
     if (_thread->has_choices())
     {
+        
         Serial.print("num choices");
         Serial.println(_thread->num_choices());
         int num_choices = _thread->num_choices();
@@ -73,9 +76,7 @@ void write_choices()
             next_line();
         }
     }
-    else {
-        clear_choices();
-    }
+    
 }
 
 void story_choice(int choice)

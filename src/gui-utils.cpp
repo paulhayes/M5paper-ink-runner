@@ -148,7 +148,7 @@ const char *strnchr(const char* ptr, int ch, size_t size) {
     return NULL;
   }
 
-void word_wrap(const char *line_c)
+const char* word_wrap(const char *line_c)
 {
     //Serial.println("word_wrap start");
     int len = strlen(line_c);
@@ -163,6 +163,9 @@ void word_wrap(const char *line_c)
         strcpy(line,current);
         remaining = current + strlen(current);
         int search_len = strlen(current);
+        if(cursor_y>(canvas.height()-canvas.fontHeight())){
+            return remaining;
+        }
         while ((canvas.width() - (padding + cursor_x)) < canvas.textWidth(line))
         {
             //Serial.print("Finding last space in :");
@@ -183,6 +186,7 @@ void word_wrap(const char *line_c)
             // Serial.print("Testing:");
             // Serial.println(line);
         }
+        
         if (current != NULL && strlen(current) > 0)
         {
             // Serial.print("At ");
@@ -204,6 +208,7 @@ void word_wrap(const char *line_c)
         //Serial.println("next line");
     } while (remaining < all + len);
     free(all);
+    return NULL;
     //Serial.println("word_wrap end");
 }
 

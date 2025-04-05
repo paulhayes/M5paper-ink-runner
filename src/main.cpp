@@ -10,6 +10,8 @@ char* story_filename;
 
 void select_story()
 {
+    clear_choices();
+    gui_clear();
     story_filename=select_file("Select Story");
     load_story(story_filename);
     free(story_filename);  
@@ -59,7 +61,7 @@ void loop()
         Serial.print("> user selected ");
         Serial.println(get_current_choice());        
         story_choice(get_current_choice());
-        clear_choices();
+        //clear_choices();
         contine_story();
     }
     
