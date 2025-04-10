@@ -2,7 +2,7 @@
 #include "gui-utils.h"
 #include <cstring>
 
-void Page::addCopy(char *copy, int minY, int maxY, int selectionIndex)
+void Page::addLine(char *copy, int minY, int maxY, int selectionIndex)
 {
 
     
@@ -27,9 +27,16 @@ void Paginator::addCopy(char *copy)
 }
 
 const char* Paginator::wordWrap(const char *line_c){
-    while(line_c!=NULL){
-        line_c = one_line(line_c);
-        // this->cursor_y+=canvas.fontHeight();
+    while(line_c && *line_c!='\0'){
+        const char *next_line = wrap_one_line(line_c);
+        //next_line();
+        if(vertical_overflow()){
+            gui_clear();
+            this->addPage();            
+        }
+        this->getLastPage()->addLine(next_line);
+        next_line = line_c;
+        // 
         // if(cursor_y>canvas.height()){
         //     break;
         // }

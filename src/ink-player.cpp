@@ -40,10 +40,11 @@ void write_story_section()
 
         auto line_c = _thread->getline_alloc();
         
-        if (line_c != NULL)
+        if (line_c && *line_c!='\0')
         {
             Serial.println(line_c);
-            auto remaining = word_wrap(line_c);
+            line_c = paginator.wordWrap(line_c);
+            //auto remaining = word_wrap(line_c);
             
         }
         else

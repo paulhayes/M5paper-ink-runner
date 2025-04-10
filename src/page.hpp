@@ -20,7 +20,7 @@ class Page
     int currentY;
     public:
        
-    void addCopy(char *copy, int minY, int maxY, int selectionIndex);
+    void addLine(char *copy, int minY, int maxY, int selectionIndex);
     CopyBlock getCopy(int index);
     //CopyBlock getOption(int index);
 };

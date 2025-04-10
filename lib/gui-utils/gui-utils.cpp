@@ -22,6 +22,11 @@ void next_line()
     cursor_x = current_indent;
 }
 
+bool vertical_overflow()
+{
+    return cursor_y>canvas.height();
+}
+
 void draw_selection_cursor()
 {
     for(int i=0;i<num_choice_pos;i++){
@@ -155,7 +160,7 @@ int text_width(const char *string)
 }
 
 
-char* one_line(const char *block_c, int max_line_width, int (* width_callback)(const char*))
+char* wrap_one_line(const char *block_c, int max_line_width, int (* width_callback)(const char*))
 {
     char *endOfLine=strchr(block_c, '\n');
     bool foundNewline = true;
@@ -203,11 +208,11 @@ char* one_line(const char *block_c, int max_line_width, int (* width_callback)(c
     return nextLine;
 }
 
-char* one_line(const char *block_c)
+char* wrap_one_line(const char *block_c)
 {
     int maxLineWidth=canvas.width()-(padding + cursor_x);
 
-    return one_line(block_c,maxLineWidth,text_width);
+    return wrap_one_line(block_c,maxLineWidth,text_width);
 }
 
 const char* word_wrap(const char *line_c)

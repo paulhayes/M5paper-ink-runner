@@ -32,7 +32,7 @@ void test_wordwrap()
 
     while(current_line!=NULL && current_line[0]!='\0'){
         char *last_line = current_line;
-        current_line = one_line(current_line, max_line_width, test_length);
+        current_line = wrap_one_line(current_line, max_line_width, test_length);
         sprintf(buf,"Incorrect line %d %d %d %d",numLines,strlen(last_line),(uint32_t)current_line,(uint32_t)paragraph);
         if(numLines<6){
             TEST_ASSERT_EQUAL_STRING_MESSAGE(lines[numLines],last_line,buf);
