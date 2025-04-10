@@ -148,7 +148,99 @@ const char *strnchr(const char* ptr, int ch, size_t size) {
     return NULL;
   }
 
+
+int text_width(const char *string)
+{
+    return canvas.textWidth(string);
+}
+
+
+char* one_line(const char *block_c, int max_line_width, int (* width_callback)(const char*))
+{
+    char *endOfLine=strchr(block_c, '\n');
+    bool foundNewline = true;
+    char *insertedNull = endOfLine;
+    char *nextLine;
+    
+    int width=0;
+    if(endOfLine==NULL){
+        endOfLine=strchr(block_c,'\0');
+        foundNewline = false;
+        nextLine=endOfLine;
+    }
+    else {
+        endOfLine[0]='\0';
+        nextLine=endOfLine+1;
+    }
+
+    char *nextSpace = strchr(block_c,' ');
+    char *prevSpace = NULL;
+    if(nextSpace==NULL){
+        return endOfLine;
+    }
+    while(nextSpace!=NULL && nextSpace<endOfLine) {
+        nextSpace[0]='\0';
+        //width = canvas.textWidth(block_c);
+        width = width_callback(block_c);
+        nextSpace[0]=' ';
+        if(width>max_line_width){
+            if(prevSpace==NULL){
+                break;   
+            }
+            else {
+                prevSpace[0]='\0';
+                block_c = prevSpace+1;
+                endOfLine=prevSpace+1;
+                nextLine = endOfLine;
+                break;
+            }
+        }
+        else {
+        }
+        prevSpace = nextSpace;
+        nextSpace = strchr(nextSpace+1,' ');        
+    }
+    return nextLine;
+}
+
+char* one_line(const char *block_c)
+{
+    int maxLineWidth=canvas.width()-(padding + cursor_x);
+
+    return one_line(block_c,maxLineWidth,text_width);
+}
+
 const char* word_wrap(const char *line_c)
+{
+    return NULL;
+}
+
+const char* word_wrap2(const char *block_c)
+{
+    //create copy of text block
+    //measure length
+    //last character
+    //do
+        //find next space
+        //find next newline
+        //if next space<next newline 
+            //replace space with null
+        //else
+            //replace newline with null
+        //measure width
+        //put space or newline back
+
+        //if width>line_length
+            //replace previous space or newline with null
+            //add line_start pointer to page
+        //else
+
+    //while 
+    return NULL;
+}
+
+
+const char* word_wrap_old(const char *line_c)
 {
     //Serial.println("word_wrap start");
     int len = strlen(line_c);

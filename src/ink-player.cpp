@@ -6,12 +6,14 @@
 #include "ink-player.h"
 #include "FS.h"
 #include "SPIFFS.h"
+#include "page.hpp"
 
 using namespace ink::runtime;
 ink::runtime::globals global_vars;
 
 story *myInk;
 runner _thread;
+Paginator paginator = Paginator();
 
 void contine_story()
 {

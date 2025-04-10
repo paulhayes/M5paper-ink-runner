@@ -5,7 +5,7 @@
 #include "SPIFFS.h"
 #include "gui-utils.h"
 #include "ink-player.h"
-
+#ifndef PIO_UNIT_TESTING
 char* story_filename;
 
 void select_story()
@@ -66,3 +66,4 @@ void loop()
     }
     
 }
+#endif
