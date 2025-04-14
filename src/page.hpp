@@ -1,11 +1,18 @@
+#include <M5EPD_Canvas.h>
 #ifndef PAGE_HPP 
 #define PAGE_HPP
 struct CopyBlock {
-    char* text;
-    int minY;
-    int maxY;
+    const char* text;
+    int y;
+    int x;
+};
+
+struct SelectionArea {
+    int choiceIndex;
     int minX;
-    char selectionIndex;
+    int maxX;
+    int minY;
+    int maxY;   
 };
 
 class Page 
@@ -13,14 +20,17 @@ class Page
     private:
     static const int MAX_COPY=32; 
     CopyBlock copySections[MAX_COPY];
+    SelectionArea choices[MAX_COPY];
     //CopyBlock options[32];
     int copyLengths;
     int numCopySections;
-    int numOptions;
+    int numSelectionAreas;
     int currentY;
     public:
-       
-    void addLine(char *copy, int minY, int maxY, int selectionIndex);
+    int numOptions;
+    void addLine(const char *copy, int x, int y);
+    SelectionArea& getChoice(int i);
+    void addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY);
     CopyBlock getCopy(int index);
     //CopyBlock getOption(int index);
 };
@@ -31,17 +41,27 @@ class Paginator
     private:
     static const int MAX_PAGES = 32;
     Page *pages[MAX_PAGES];
+    M5EPD_Canvas &m_canvas;
+    
     Page* getLastPage();
     Page* addPage();
+    const char* wordWrap(const char *line_c);
     public:
     int numPages;
     int cursorX;
     int cursorY;
     int indent;
-    const char* wordWrap(const char *line_c);
+    int currentPageIndex = 0;
+    int padding = 5;
+    int current_indent = padding;
+    Paginator(M5EPD_Canvas &canvas):m_canvas(canvas)
+    {
+    }
+    Page &currentPage();
     void addCopy(char *copy);
-    void addSelectableCopy(char *copy);
+    void addChoice(char *copy);
     void clear();
+    bool hasChoices();
 };
 
 #endif

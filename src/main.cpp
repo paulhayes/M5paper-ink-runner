@@ -5,14 +5,21 @@
 #include "SPIFFS.h"
 #include "gui-utils.h"
 #include "ink-player.h"
+#include "page.hpp"
 #ifndef PIO_UNIT_TESTING
 char* story_filename;
+
+M5EPD_Canvas canvas(&M5.EPD);
+M5EPD_Canvas selected_icon(&M5.EPD);
+M5EPD_Canvas unselected_icon(&M5.EPD);
+
+Paginator paginator = Paginator(canvas);
 
 void select_story()
 {
     clear_choices();
-    gui_clear();
-    story_filename=select_file("Select Story");
+    gui_clear(canvas);
+    story_filename=select_file("Select Story",paginator);
     load_story(story_filename);
     free(story_filename);  
     contine_story();
@@ -51,12 +58,12 @@ void loop()
 {
     delay(20);
     M5.update();
-    if(get_num_choices()==0){
+    if(!paginator.hasChoices()){
         if(M5.BtnP.wasPressed()){
             select_story();
         }
     }
-    else if(check_selection()){
+    else if(check_selection(canvas, paginator)){
         
         Serial.print("> user selected ");
         Serial.println(get_current_choice());        

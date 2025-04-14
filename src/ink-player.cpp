@@ -13,7 +13,6 @@ ink::runtime::globals global_vars;
 
 story *myInk;
 runner _thread;
-Paginator paginator = Paginator();
 
 void contine_story()
 {
