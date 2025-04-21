@@ -30,8 +30,9 @@ class Page
     int numOptions;
     void addLine(const char *copy, int x, int y);
     SelectionArea& getChoice(int i);
-    void addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY);
+    void addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY);    
     CopyBlock getCopy(int index);
+    void render(M5EPD_Canvas canvas);
     //CopyBlock getOption(int index);
 };
 
@@ -59,9 +60,13 @@ class Paginator
     }
     Page &currentPage();
     void addCopy(char *copy);
-    void addChoice(char *copy);
+    void addChoice(int choiceIndex, char *copy);
+    void addLineBreak();
     void clear();
     bool hasChoices();
+    void renderPage();
+    bool nextPage();
+    bool previousPage();
 };
 
 #endif

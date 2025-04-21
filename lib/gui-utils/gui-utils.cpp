@@ -31,11 +31,15 @@ int current_choice = 0;
 // }
 
 
-void draw_selection_cursor(M5EPD_Canvas selected_icon, M5EPD_Canvas unselected_icon)
+void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
 {
-    for(int i=0;i<num_choice_pos;i++){
+
+    int numChoices = paginator.currentPage().numOptions;
+    for(int i=0;i<numChoices;i++){
         M5EPD_Canvas* icon = (i==current_choice)? &selected_icon: &unselected_icon;
-        icon->pushCanvas(5,choice_positions[i],UPDATE_MODE_DU4);
+        SelectionArea choice = paginator.currentPage().getChoice(i);
+        icon->pushCanvas(choice.minX,choice.minY,UPDATE_MODE_DU4);
+        
     }
 }
 
@@ -77,7 +81,11 @@ bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
         Serial.println('-');
         current_choice--;
         if(current_choice<0){
-            current_choice=num_choice_pos-1;
+            if(paginator.previousPage()){
+                paginator.renderPage();
+            }
+            current_choice=-1;
+            //current_choice=num_choice_pos-1;
         }
         draw_selection_cursor();
     }
@@ -85,7 +93,11 @@ bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
         Serial.println('+');
         current_choice++;
         if(current_choice>=num_choice_pos){
-            current_choice=0;
+            current_choice=num_choice_pos;
+            if(paginator.nextPage()){
+                paginator.renderPage();
+            }
+            //current_choice=0;
         }
         draw_selection_cursor();
     }    
@@ -114,7 +126,7 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* title)
             files[num_files]=(char*)malloc(len);
             strcpy(files[num_files],name);
             int y=100+num_files*2*canvas.fontHeight();
-            paginator.addChoice(name);
+            paginator.addChoice(num_files,name);
             num_files++;
         }
         file.close();
@@ -161,7 +173,7 @@ const char *strnchr(const char* ptr, int ch, size_t size) {
   }
 
 
-char* wrap_one_line(const char *block_c, int max_line_width, int (* width_callback)(const char*))
+char* wrap_one_line(const char *block_c, int max_line_width, int16_t (* width_callback)(const char*))
 {
     char *endOfLine=strchr(block_c, '\n');
     bool foundNewline = true;

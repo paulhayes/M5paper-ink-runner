@@ -14,35 +14,36 @@ ink::runtime::globals global_vars;
 story *myInk;
 runner _thread;
 
-void contine_story()
+void contine_story(Paginator &paginator)
 {
     Serial.println("contine story");
-    gui_clear();
-    
-    write_story_section();
+    //gui_clear();
+    paginator.clear();
+    write_story_section(paginator);
     set_indent(40);
-    next_line();
-    write_choices();
-    //canvas.drawString("Hello World", 0, 0);
-    gui_draw();
-    draw_selection_cursor();
+    paginator.addLineBreak();
+    write_choices(paginator);
+    //gui_draw();
+    //draw_selection_cursor();
     
     Serial.println("Redraw complete");
 }
 
-void write_story_section()
+void write_story_section(Paginator &paginator)
 {
-    while (_thread->can_continue() && cursor_inside_canvas())
+    while (_thread->can_continue())
     {
         // Serial.print("Free heap size ");
         // Serial.println(ESP.getFreeHeap());
 
         auto line_c = _thread->getline_alloc();
+        char* textCopy = (char*)malloc(strlen(line_c)+1);
+        strcpy(textCopy,line_c);
         
         if (line_c && *line_c!='\0')
         {
             Serial.println(line_c);
-            line_c = paginator.wordWrap(line_c);
+            paginator.addCopy(textCopy);
             //auto remaining = word_wrap(line_c);
             
         }
@@ -50,15 +51,17 @@ void write_story_section()
         {
             Serial.println("line was null");
         }
-        next_line();
+        paginator.addLineBreak();
         // Serial.print("Free heap size ");
         // Serial.println(ESP.getFreeHeap());//this is the same as before running getline. Surely some memmory allocation should happen?
     }
+
+    
 }
 
-void write_choices()
+void write_choices(Paginator &paginator)
 {
-    next_line();
+    paginator.addLineBreak();
     clear_choices();
     // Iterate choices
     if (_thread->has_choices())
@@ -70,12 +73,17 @@ void write_choices()
         for (int i = 0; i < num_choices; i++)
         {
             auto text = _thread->get_choice(i)->text();
+            
+            char* textCopy = (char*)malloc(strlen(text)+1);
+            strcpy(textCopy,text);
             //Serial.println(text);
             Serial.print(i);
             Serial.print(" ");
             Serial.println(text);
-            add_choice_option(text);
-            next_line();
+            paginator.addChoice(i,textCopy);
+            paginator.addLineBreak();
+            //add_choice_option(text);
+            //next_line();
         }
     }
     

@@ -15,15 +15,7 @@ M5EPD_Canvas unselected_icon(&M5.EPD);
 
 Paginator paginator = Paginator(canvas);
 
-void select_story()
-{
-    clear_choices();
-    gui_clear(canvas);
-    story_filename=select_file("Select Story",paginator);
-    load_story(story_filename);
-    free(story_filename);  
-    contine_story();
-}
+void select_story();
 
 void setup()
 {
@@ -48,7 +40,7 @@ void setup()
     
     //load_font("/Roboto-Black.ttf");
     
-    setup_gui();
+    setup_gui(&canvas,&selected_icon,&unselected_icon);
 
     select_story();
 }
@@ -66,11 +58,22 @@ void loop()
     else if(check_selection(canvas, paginator)){
         
         Serial.print("> user selected ");
-        Serial.println(get_current_choice());        
+        Serial.println(get_current_choice()); 
         story_choice(get_current_choice());
         //clear_choices();
-        contine_story();
+        contine_story(paginator);
     }
     
 }
+
+void select_story()
+{
+    clear_choices();
+    gui_clear(canvas);
+    story_filename=select_file(canvas, paginator, "Select Story");
+    load_story(story_filename);
+    free(story_filename);  
+    contine_story(paginator);
+}
+
 #endif
