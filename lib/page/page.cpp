@@ -53,7 +53,7 @@ void Paginator::addCopy(char *copy)
     //getLastPage()->addLine(copy,this->cursorY,);
 }
 
-void Paginator::addChoice(int choiceIndex, char *copy)
+void Paginator::addChoice(int choiceIndex, const char *copy)
 {
     if(numPages==0){
         this->addPage();
@@ -84,8 +84,14 @@ void Paginator::addLineBreak()
 
 const char* Paginator::wordWrap(const char *line_c){
     while(line_c && *line_c!='\0'){
-        auto callback = std::bind(&M5EPD_Canvas::textWidth, &this->m_canvas, std::placeholders::_1);
-        const char *next_line = wrap_one_line(this->m_canvas, line_c, this->m_canvas.width(),callback);
+        //int16_t (*callbackMethod)(const char*) = &(M5EPD_Canvas::textWidth);
+        //auto callbackMethod = std::mem_fn(static_cast<int16_t (M5EPD_Canvas::*)(const char*)>(&M5EPD_Canvas::textWidth));
+        //auto callback = std::bind(static_cast<int16_t (M5EPD_Canvas::*)(const char*)>(&M5EPD_Canvas::textWidth), &this->m_canvas, std::placeholders::_1);
+        auto canvas = this->m_canvas;
+        //std::function<int16_t(const char*)> callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
+        widthCallbackFunc callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
+        //auto callback = [&](const char* str) ->canvas.textWidth(str);
+        const char *next_line = wrap_one_line(line_c, this->m_canvas.width(),callback);
         //next_line();
         if(this->cursorY>this->m_canvas.height()){
             

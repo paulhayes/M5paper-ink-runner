@@ -20,7 +20,7 @@ void contine_story(Paginator &paginator)
     //gui_clear();
     paginator.clear();
     write_story_section(paginator);
-    set_indent(40);
+    paginator.indent = 40;
     paginator.addLineBreak();
     write_choices(paginator);
     //gui_draw();

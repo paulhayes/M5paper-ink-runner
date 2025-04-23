@@ -60,7 +60,7 @@ class Paginator
     }
     Page &currentPage();
     void addCopy(char *copy);
-    void addChoice(int choiceIndex, char *copy);
+    void addChoice(int choiceIndex, const char *copy);
     void addLineBreak();
     void clear();
     bool hasChoices();

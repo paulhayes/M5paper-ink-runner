@@ -43,7 +43,7 @@ void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5E
     }
 }
 
-bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
+bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
 {
     M5.TP.update();
     if(M5.TP.available() && !M5.TP.isFingerUp()){
@@ -61,7 +61,7 @@ bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
             bool inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
             if(inY){
                 current_choice=i;
-                draw_selection_cursor();
+                draw_selection_cursor(paginator,selected_icon,unselected_icon);
                 while(!M5.TP.isFingerUp()){
                     finger = M5.TP.readFinger(0);
                     delay(5);
@@ -87,7 +87,7 @@ bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
             current_choice=-1;
             //current_choice=num_choice_pos-1;
         }
-        draw_selection_cursor();
+        draw_selection_cursor(paginator,selected_icon,unselected_icon);
     }
     if(M5.BtnR.wasPressed()){
         Serial.println('+');
@@ -99,7 +99,7 @@ bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
             }
             //current_choice=0;
         }
-        draw_selection_cursor();
+        draw_selection_cursor(paginator,selected_icon,unselected_icon);
     }    
     if(M5.BtnP.wasPressed() && current_choice>=0){
         Serial.println("button down");
@@ -108,12 +108,12 @@ bool check_selection(M5EPD_Canvas &canvas, Paginator &paginator)
     return false;
 }
 
-char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* title)
+char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titlePaginator, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
 {
     int cursor_x = 5;
     int cursor_y = 10;
     canvas.clear();
-    canvas.drawString(title, cursor_x, cursor_y);
+    canvas.drawString(titlePaginator, cursor_x, cursor_y);
     File root = SPIFFS.open("/");
     File file;
     char *files[10];
@@ -134,9 +134,9 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* title)
     
     num_choice_pos=num_files;
     canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-    draw_selection_cursor();
+    draw_selection_cursor(paginator,selected_icon,unselected_icon);
     M5.update();
-    while(!check_selection()){
+    while(!check_selection(paginator,canvas,selected_icon,unselected_icon)){
         M5.update();
         delay(10);
     }
@@ -173,7 +173,8 @@ const char *strnchr(const char* ptr, int ch, size_t size) {
   }
 
 
-char* wrap_one_line(const char *block_c, int max_line_width, int16_t (* width_callback)(const char*))
+
+char* wrap_one_line(const char *block_c, int max_line_width, widthCallbackFunc width_callback)
 {
     char *endOfLine=strchr(block_c, '\n');
     bool foundNewline = true;

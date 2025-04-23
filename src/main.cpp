@@ -55,7 +55,7 @@ void loop()
             select_story();
         }
     }
-    else if(check_selection(canvas, paginator)){
+    else if(check_selection(paginator,canvas,selected_icon,unselected_icon)){
         
         Serial.print("> user selected ");
         Serial.println(get_current_choice()); 
@@ -69,8 +69,9 @@ void loop()
 void select_story()
 {
     clear_choices();
-    gui_clear(canvas);
-    story_filename=select_file(canvas, paginator, "Select Story");
+    //gui_clear(canvas);
+    paginator.clear();
+    story_filename=select_file(canvas, paginator, "Select Story",selected_icon,unselected_icon);
     load_story(story_filename);
     free(story_filename);  
     contine_story(paginator);
