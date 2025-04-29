@@ -34,7 +34,15 @@ CopyBlock Page::getCopy(int index)
 void Page::render(M5EPD_Canvas canvas)
 {
     canvas.clear();
+    Serial.println("Rendering");
     for(int i=0;i < this->numCopySections;i++){
+        auto section = this->copySections[i];
+        Serial.print(section.text);
+        Serial.print(" ");
+        Serial.print(section.x);
+        Serial.print(" ");
+        Serial.print(section.y);
+        Serial.println(" ");
         canvas.drawString(this->copySections[i].text,this->copySections[i].x,this->copySections[i].y);
     }
 }
@@ -44,7 +52,7 @@ Page &Paginator::currentPage()
     return *pages[currentPageIndex];
 }
 
-void Paginator::addCopy(char *copy)
+void Paginator::addCopy(const char *copy)
 {
     if(numPages==0){
         this->addPage();
@@ -55,13 +63,17 @@ void Paginator::addCopy(char *copy)
 
 void Paginator::addChoice(int choiceIndex, const char *copy)
 {
+    Serial.println("adding page");
     if(numPages==0){
         this->addPage();
     }
+    Serial.println("page added");
+    Serial.println("word wrapping");
     int startPage = this->currentPageIndex;
     int startY = this->cursorY;
     int startX = this->cursorX;
     this->wordWrap(copy);
+    Serial.println("adding selection area");
     if(startPage < this->currentPageIndex){        
         for(int pageIndex=startPage;pageIndex<this->currentPageIndex;pageIndex++){
             this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
@@ -69,6 +81,7 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
         }
     }
     this->currentPage().addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
+    Serial.println("selection area added");
 }
 
 void Paginator::addLineBreak()
@@ -84,21 +97,25 @@ void Paginator::addLineBreak()
 
 const char* Paginator::wordWrap(const char *line_c){
     while(line_c && *line_c!='\0'){
+        Serial.println("Settings out one line");
         //int16_t (*callbackMethod)(const char*) = &(M5EPD_Canvas::textWidth);
         //auto callbackMethod = std::mem_fn(static_cast<int16_t (M5EPD_Canvas::*)(const char*)>(&M5EPD_Canvas::textWidth));
         //auto callback = std::bind(static_cast<int16_t (M5EPD_Canvas::*)(const char*)>(&M5EPD_Canvas::textWidth), &this->m_canvas, std::placeholders::_1);
-        auto canvas = this->m_canvas;
+        M5EPD_Canvas &canvas = this->m_canvas;
         //std::function<int16_t(const char*)> callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
         widthCallbackFunc callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
         //auto callback = [&](const char* str) ->canvas.textWidth(str);
         const char *next_line = wrap_one_line(line_c, this->m_canvas.width(),callback);
+        Serial.print("line pointer ");
+        int lineAddr = *line_c;
+        Serial.println(lineAddr);
         //next_line();
         if(this->cursorY>this->m_canvas.height()){
             
             this->addPage();            
         }
         this->getLastPage()->addLine(next_line, this->cursorX, this->cursorX);
-        next_line = line_c;
+        line_c = next_line;
         // 
         // if(cursor_y>canvas.height()){
         //     break;
@@ -110,6 +127,10 @@ const char* Paginator::wordWrap(const char *line_c){
 
 Page* Paginator::getLastPage()
 {
+    if(this->numPages==0){
+        Serial.println("Can't get last page, no pages added");
+        return nullptr;
+    }
     return pages[this->numPages-1];
 }
 

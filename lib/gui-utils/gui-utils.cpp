@@ -110,10 +110,10 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
 
 char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titlePaginator, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
 {
-    int cursor_x = 5;
-    int cursor_y = 10;
     canvas.clear();
-    canvas.drawString(titlePaginator, cursor_x, cursor_y);
+    char* title = (char*)malloc(strlen(titlePaginator+1));
+    strcpy(title,titlePaginator);
+    paginator.addCopy(title);
     File root = SPIFFS.open("/");
     File file;
     char *files[10];
@@ -122,20 +122,24 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
         const char* name=file.name();
         int len=strlen(name);
         if( strcmp(name+len-4,".bin")==0 ){
+            Serial.print("file: ");
             Serial.println(name);
-            files[num_files]=(char*)malloc(len);
+            auto fileName = files[num_files]=(char*)malloc(len);
             strcpy(files[num_files],name);
             int y=100+num_files*2*canvas.fontHeight();
             paginator.addChoice(num_files,name);
             num_files++;
+            Serial.println("Next file");
         }
         file.close();
     }
     
     num_choice_pos=num_files;
+    paginator.renderPage();
     canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-    draw_selection_cursor(paginator,selected_icon,unselected_icon);
+    draw_selection_cursor(paginator,selected_icon,unselected_icon);    
     M5.update();
+
     while(!check_selection(paginator,canvas,selected_icon,unselected_icon)){
         M5.update();
         delay(10);
@@ -176,6 +180,8 @@ const char *strnchr(const char* ptr, int ch, size_t size) {
 
 char* wrap_one_line(const char *block_c, int max_line_width, widthCallbackFunc width_callback)
 {
+    Serial.print("wrapping first line of ");
+    Serial.println(block_c);
     char *endOfLine=strchr(block_c, '\n');
     bool foundNewline = true;
     char *insertedNull = endOfLine;
@@ -199,8 +205,8 @@ char* wrap_one_line(const char *block_c, int max_line_width, widthCallbackFunc w
     }
     while(nextSpace!=NULL && nextSpace<endOfLine) {
         nextSpace[0]='\0';
-        //width = canvas.textWidth(block_c);
         width = width_callback(block_c);
+        //width = strlen(block_c)*20;
         nextSpace[0]=' ';
         if(width>max_line_width){
             if(prevSpace==NULL){

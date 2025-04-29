@@ -32,7 +32,7 @@ void setup()
 
     Serial.println("Test Done");
 
-    M5.begin();
+    M5.begin(true,false,true,false,false);
     M5.EPD.SetRotation(90);
     M5.TP.SetRotation(90);
     M5.EPD.Clear(true);
