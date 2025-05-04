@@ -178,8 +178,12 @@ const char *strnchr(const char* ptr, int ch, size_t size) {
 
 
 
-char* wrap_one_line(const char *block_c, int max_line_width, widthCallbackFunc width_callback)
+char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFunc width_callback)
 {
+    // char* block_c = (char*)malloc(strlen(ref_current_line+1));
+    // strcpy(block_c,ref_current_line);
+    char* block_c = ref_current_line;
+
     Serial.print("wrapping first line of ");
     Serial.println(block_c);
     char *endOfLine=strchr(block_c, '\n');
@@ -225,6 +229,10 @@ char* wrap_one_line(const char *block_c, int max_line_width, widthCallbackFunc w
         prevSpace = nextSpace;
         nextSpace = strchr(nextSpace+1,' ');        
     }
+    int len = strlen(block_c);
+    ref_current_line = (char*)malloc(len+1);
+    strcpy(ref_current_line,block_c);
+    //free(block_c);
     return nextLine;
 }
 

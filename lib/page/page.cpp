@@ -3,7 +3,14 @@
 #include "page.hpp"
 #include "gui-utils.h"
 
-void Page::addLine(const char *copy, int x, int y)
+Page::~Page()
+{
+    for(int i=numCopySections-1;i>=0;i--){
+        free((void*)copySections[i].text);
+    }
+}
+
+void Page::addLine(char *copy, int x, int y)
 {    
     copySections[numCopySections] = {copy,x,y};
     numCopySections++;
@@ -95,7 +102,11 @@ void Paginator::addLineBreak()
     }
 }
 
-const char* Paginator::wordWrap(const char *line_c){
+void Paginator::wordWrap(const char *text){
+    char* alloc_text = (char*)malloc(strlen(text)+1);
+    strcpy(alloc_text,text);
+    char* line_c = alloc_text;
+    
     while(line_c && *line_c!='\0'){
         Serial.println("Settings out one line");
         //int16_t (*callbackMethod)(const char*) = &(M5EPD_Canvas::textWidth);
@@ -105,7 +116,8 @@ const char* Paginator::wordWrap(const char *line_c){
         //std::function<int16_t(const char*)> callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
         widthCallbackFunc callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
         //auto callback = [&](const char* str) ->canvas.textWidth(str);
-        const char *next_line = wrap_one_line(line_c, this->m_canvas.width(),callback);
+        
+        char *next_line = wrap_one_line(line_c, this->m_canvas.width(),callback);
         Serial.print("line pointer ");
         int lineAddr = *line_c;
         Serial.println(lineAddr);
@@ -114,7 +126,7 @@ const char* Paginator::wordWrap(const char *line_c){
             
             this->addPage();            
         }
-        this->getLastPage()->addLine(next_line, this->cursorX, this->cursorX);
+        this->getLastPage()->addLine(line_c, this->cursorX, this->cursorX);
         line_c = next_line;
         // 
         // if(cursor_y>canvas.height()){
@@ -122,7 +134,7 @@ const char* Paginator::wordWrap(const char *line_c){
         // }
         
     }
-    return line_c;
+    free(alloc_text);
 }
 
 Page* Paginator::getLastPage()

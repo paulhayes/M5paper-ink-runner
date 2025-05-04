@@ -2,7 +2,7 @@
 #ifndef PAGE_HPP 
 #define PAGE_HPP
 struct CopyBlock {
-    const char* text;
+    char* text;
     int y;
     int x;
 };
@@ -28,11 +28,13 @@ class Page
     int currentY;
     public:
     int numOptions;
-    void addLine(const char *copy, int x, int y);
+    ~Page();
+    void addLine(char *copy, int x, int y);
     SelectionArea& getChoice(int i);
     void addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY);    
     CopyBlock getCopy(int index);
     void render(M5EPD_Canvas canvas);
+    
     //CopyBlock getOption(int index);
 };
 
@@ -46,7 +48,7 @@ class Paginator
     
     Page* getLastPage();
     Page* addPage();
-    const char* wordWrap(const char *line_c);
+    void wordWrap(const char *line_c);
     public:
     int numPages;
     int cursorX;
