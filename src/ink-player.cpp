@@ -25,7 +25,7 @@ void contine_story(Paginator &paginator)
     write_choices(paginator);
     //gui_draw();
     //draw_selection_cursor();
-    
+    paginator.renderPage();
     Serial.println("Redraw complete");
 }
 
@@ -42,7 +42,7 @@ void write_story_section(Paginator &paginator)
         
         if (line_c && *line_c!='\0')
         {
-            Serial.println(line_c);
+            Serial.println(textCopy);
             paginator.addCopy(textCopy);
             //auto remaining = word_wrap(line_c);
             

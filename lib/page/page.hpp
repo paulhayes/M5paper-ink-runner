@@ -3,8 +3,8 @@
 #define PAGE_HPP
 struct CopyBlock {
     char* text;
-    int y;
     int x;
+    int y;
 };
 
 struct SelectionArea {
@@ -27,10 +27,11 @@ class Page
     int numSelectionAreas;
     int currentY;
     public:
-    int numOptions;
     ~Page();
     void addLine(char *copy, int x, int y);
-    SelectionArea& getChoice(int i);
+    void printCopy();
+    SelectionArea& getSelectionArea(int i);
+    int getNumSelectionAreas();
     void addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY);    
     CopyBlock getCopy(int index);
     void render(M5EPD_Canvas canvas);
@@ -53,10 +54,9 @@ class Paginator
     int numPages;
     int cursorX;
     int cursorY;
-    int indent;
     int currentPageIndex = 0;
     int padding = 5;
-    int current_indent = padding;
+    int indent = padding;
     Paginator(M5EPD_Canvas &canvas):m_canvas(canvas)
     {
     }

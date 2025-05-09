@@ -73,7 +73,7 @@ void select_story()
     paginator.clear();
     story_filename=select_file(canvas, paginator, "Select Story",selected_icon,unselected_icon);
     load_story(story_filename);
-    free(story_filename);  
+    free(story_filename);
     contine_story(paginator);
 }
 

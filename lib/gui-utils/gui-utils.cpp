@@ -34,12 +34,16 @@ int current_choice = 0;
 void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
 {
 
-    int numChoices = paginator.currentPage().numOptions;
+    int numChoices = paginator.currentPage().getNumSelectionAreas();
     for(int i=0;i<numChoices;i++){
         M5EPD_Canvas* icon = (i==current_choice)? &selected_icon: &unselected_icon;
-        SelectionArea choice = paginator.currentPage().getChoice(i);
-        icon->pushCanvas(choice.minX,choice.minY,UPDATE_MODE_DU4);
-        
+        SelectionArea choice = paginator.currentPage().getSelectionArea(i);
+        icon->pushCanvas(choice.minX-icon->width(),choice.minY,UPDATE_MODE_DU4);
+        Serial.print(choice.minX);
+        Serial.print(",");
+        Serial.print(choice.minY);
+        Serial.print(" ");
+        Serial.println(i==current_choice);
     }
 }
 
@@ -56,7 +60,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         // Serial.println("");
 
         for(int i=0;i<num_choice_pos;i++){
-            SelectionArea selectionArea = paginator.currentPage().getChoice(i);
+            SelectionArea selectionArea = paginator.currentPage().getSelectionArea(i);
             int maxY = +canvas.fontHeight();
             bool inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
             if(inY){
@@ -111,7 +115,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
 char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titlePaginator, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
 {
     canvas.clear();
-    char* title = (char*)malloc(strlen(titlePaginator+1));
+    char* title = (char*)malloc(strlen(titlePaginator)+1);
     strcpy(title,titlePaginator);
     paginator.addCopy(title);
     File root = SPIFFS.open("/");
@@ -124,8 +128,8 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
         if( strcmp(name+len-4,".bin")==0 ){
             Serial.print("file: ");
             Serial.println(name);
-            auto fileName = files[num_files]=(char*)malloc(len);
-            strcpy(files[num_files],name);
+            // auto fileName = files[num_files]=(char*)malloc(len+1);
+            // strcpy(fileName,name);
             int y=100+num_files*2*canvas.fontHeight();
             paginator.addChoice(num_files,name);
             num_files++;
@@ -133,11 +137,12 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
         }
         file.close();
     }
+    heap_caps_check_integrity_all(true);
     
     num_choice_pos=num_files;
     paginator.renderPage();
     canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-    draw_selection_cursor(paginator,selected_icon,unselected_icon);    
+    draw_selection_cursor(paginator,selected_icon,unselected_icon);
     M5.update();
 
     while(!check_selection(paginator,canvas,selected_icon,unselected_icon)){
@@ -158,6 +163,8 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
 
     current_choice=0;
     num_choice_pos=0;
+
+    heap_caps_check_integrity_all(true);
 
     return story_filename;
 }
@@ -205,7 +212,7 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
     char *nextSpace = strchr(block_c,' ');
     char *prevSpace = NULL;
     if(nextSpace==NULL){
-        return endOfLine;
+        nextLine = endOfLine;
     }
     while(nextSpace!=NULL && nextSpace<endOfLine) {
         nextSpace[0]='\0';

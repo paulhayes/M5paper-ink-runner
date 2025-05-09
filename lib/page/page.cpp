@@ -6,19 +6,45 @@
 Page::~Page()
 {
     for(int i=numCopySections-1;i>=0;i--){
+        Serial.print("Deleting :");
+        Serial.println(copySections[i].text);
         free((void*)copySections[i].text);
     }
 }
 
 void Page::addLine(char *copy, int x, int y)
 {    
+    int lineAddr = *copy;    
     copySections[numCopySections] = {copy,x,y};
     numCopySections++;
 }
 
-SelectionArea &Page::getChoice(int i)
+void Page::printCopy()
+{
+    Serial.println("Printing Copy ");
+    for(int i=0;i<numCopySections;i++){
+        CopyBlock section = copySections[i];
+        int copyAddr = (int)(section.text);
+        Serial.print(i);
+        Serial.print(" ");
+        Serial.print(section.x);
+        Serial.print(",");
+        Serial.print(section.y);
+        Serial.print(" ");
+        Serial.print(copyAddr);
+        Serial.print(" ");
+        Serial.println(section.text);
+    }
+}
+
+SelectionArea &Page::getSelectionArea(int i)
 {
     return this->choices[i];
+}
+
+int Page::getNumSelectionAreas()
+{
+    return numSelectionAreas;
 }
 
 void Page::addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY)
@@ -44,10 +70,13 @@ void Page::render(M5EPD_Canvas canvas)
     Serial.println("Rendering");
     for(int i=0;i < this->numCopySections;i++){
         auto section = this->copySections[i];
+        int lineAddr = *(section.text);
         Serial.print(section.text);
-        Serial.print(" ");
+        Serial.print(" addr=");
+        Serial.print(lineAddr);
+        Serial.print(" x=");
         Serial.print(section.x);
-        Serial.print(" ");
+        Serial.print(" y=");
         Serial.print(section.y);
         Serial.println(" ");
         canvas.drawString(this->copySections[i].text,this->copySections[i].x,this->copySections[i].y);
@@ -70,18 +99,18 @@ void Paginator::addCopy(const char *copy)
 
 void Paginator::addChoice(int choiceIndex, const char *copy)
 {
-    Serial.println("adding page");
     if(numPages==0){
+        Serial.println("adding page");
         this->addPage();
     }
-    Serial.println("page added");
+    this->cursorX = this->indent = 40;
     Serial.println("word wrapping");
     int startPage = this->currentPageIndex;
     int startY = this->cursorY;
     int startX = this->cursorX;
     this->wordWrap(copy);
     Serial.println("adding selection area");
-    if(startPage < this->currentPageIndex){        
+    if(startPage < this->currentPageIndex){  
         for(int pageIndex=startPage;pageIndex<this->currentPageIndex;pageIndex++){
             this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
             startY = 0;
@@ -89,6 +118,7 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
     }
     this->currentPage().addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
     Serial.println("selection area added");
+    currentPage().printCopy();
 }
 
 void Paginator::addLineBreak()
@@ -117,16 +147,28 @@ void Paginator::wordWrap(const char *text){
         widthCallbackFunc callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
         //auto callback = [&](const char* str) ->canvas.textWidth(str);
         
-        char *next_line = wrap_one_line(line_c, this->m_canvas.width(),callback);
-        Serial.print("line pointer ");
-        int lineAddr = *line_c;
-        Serial.println(lineAddr);
-        //next_line();
+        Serial.print("line pointer before wrap ");
+        unsigned int lineAddr = (int)line_c;
+        Serial.print(lineAddr);
+        Serial.print(" ");
+        Serial.println(line_c);
+        char *next_line = wrap_one_line(line_c, this->m_canvas.width()-this->cursorX,callback);
+        Serial.print("line pointer after wrap ");
+        lineAddr = (int)line_c;
+        Serial.print(lineAddr);
+        Serial.print(" ");
+        Serial.println(line_c);
+        Serial.print("Leftover:");
+        Serial.println(next_line);
         if(this->cursorY>this->m_canvas.height()){
             
             this->addPage();            
         }
-        this->getLastPage()->addLine(line_c, this->cursorX, this->cursorX);
+        this->getLastPage()->addLine(line_c, this->cursorX, this->cursorY);
+        this->cursorY+=m_canvas.fontHeight();
+        this->cursorX=this->indent;
+        //next_line();
+        
         line_c = next_line;
         // 
         // if(cursor_y>canvas.height()){
@@ -177,7 +219,7 @@ void Paginator::clear()
 bool Paginator::hasChoices()
 {
     for(int i=0;i<this->numPages;i++){
-        if(this->pages[i]->numOptions>0){
+        if(this->pages[i]->getNumSelectionAreas()>0){
             return true;
         }        
     }
