@@ -80,6 +80,15 @@ void test_wrap_short()
     test_wordwrap(paragraph,lines,1);
 }
 
+void test_wrap_empty()
+{
+    char paragraph[] = "\n";
+    const char *lines[] = {
+        ""        
+    };
+    test_wordwrap(paragraph,lines,1);
+}
+
 void trivialTest(void) {
     TEST_ASSERT_EQUAL(4, 3+1);
 }
@@ -90,8 +99,9 @@ void setup()
     UNITY_BEGIN();
     RUN_TEST(trivialTest);
     RUN_TEST(test_wrap_one_line);
-    RUN_TEST(test_wrap_newlines_line);
     RUN_TEST(test_wrap_short);
+    RUN_TEST(test_wrap_newlines_line);
+    RUN_TEST(test_wrap_empty);
     UNITY_END();
 }
 

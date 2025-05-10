@@ -188,40 +188,41 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
 
     Serial.print("wrapping first line of ");
     Serial.println(block_c);
-    char *endOfLine=strchr(block_c, '\n');
-    bool foundNewline = true;
-    char *insertedNull = endOfLine;
+    char *endOfLine=block_c+strlen(block_c);
+    char* nextNewline = strchr(block_c, '\n');
+    char *nextSpace = strchr(block_c,' ');
+    char *insertedNull = NULL;
     char *nextLine;
     int lineLength=0;
-    
+    char replacedChar=' ';
     int width=0;
-    if(endOfLine==NULL){
-        endOfLine=strchr(block_c,'\0');
-        foundNewline = false;
-        nextLine=endOfLine;
-    }
-    else {
-        endOfLine[0]='\0';
-        nextLine=endOfLine+1;
-    }
 
-    char *nextSpace = strchr(block_c,' ');
     char *prevSpace = NULL;
     if(nextSpace==NULL){
         nextLine = endOfLine;
     }
-    while(nextSpace!=NULL && nextSpace<endOfLine) {
+    while(nextSpace!=NULL && (uintptr_t)nextSpace<(uintptr_t)endOfLine) {
+        if(nextNewline!=NULL && (uintptr_t)nextNewline<(uintptr_t)nextSpace){
+            nextSpace = nextNewline;
+            replacedChar='\n';
+            nextSpace[0]='\0';
+            endOfLine=nextNewline;
+            nextLine=nextNewline+1;
+            break;
+        }
+        else {
+            replacedChar=' ';
+        }
         nextSpace[0]='\0';
+        insertedNull=nextSpace;
         width = width_callback(block_c);
-        //width = strlen(block_c)*20;
-        nextSpace[0]=' ';
+        nextSpace[0]=replacedChar;
         if(width>max_line_width){
             if(prevSpace==NULL){
                 break;   
             }
             else {
                 prevSpace[0]='\0';
-                //block_c = prevSpace+1;
                 endOfLine=prevSpace+1;
                 nextLine = endOfLine;
                 break;
