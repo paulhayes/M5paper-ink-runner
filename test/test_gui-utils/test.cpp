@@ -10,18 +10,10 @@ int test_length(const char *str)
     return 10*strlen(str);
 }
 
-void test_wordwrap()
-{
-    char paragraph[] = "Mary had a little lamb it's fleece was white as snow. And everywhere that Mary went, the lamb was sure to go";
-    const char *lines[] = {
-        "Mary had a little",
-        "lamb it's fleece was",
-        "white as snow. And",
-        "everywhere that Mary",
-        "went, the lamb was",
-        "sure to go"
-    };
 
+
+void test_wordwrap(char *paragraph,const char **lines,int expectedNumLines)
+{    
     char *current_line = paragraph;
     int max_line_width = 200;
     int numLines=0;
@@ -32,10 +24,12 @@ void test_wordwrap()
 
     while(current_line!=NULL && current_line[0]!='\0'){
         char *last_line = current_line;
-        current_line = wrap_one_line(current_line, max_line_width, test_length);
-        sprintf(buf,"Incorrect line %d %d %d %d",numLines,strlen(last_line),(uint32_t)current_line,(uint32_t)paragraph);
+        current_line = wrap_one_line(last_line, max_line_width, test_length);
+        sprintf(buf,"Incorrect line, line_index=%d length=%d offset=%d",numLines,strlen(last_line),(uint32_t)current_line-(uint32_t)paragraph);
         if(numLines<6){
+            //TEST_ASSERT_EQUAL_STRING_MESSAGE(lines[numLines],last_line,buf);
             TEST_ASSERT_EQUAL_STRING_MESSAGE(lines[numLines],last_line,buf);
+            
         }
         numLines++;
         if(numLines>32){
@@ -43,7 +37,47 @@ void test_wordwrap()
         }
     }
 
-    TEST_ASSERT_EQUAL(6,numLines);
+
+    TEST_ASSERT_EQUAL(expectedNumLines,numLines);
+
+}
+
+void test_wrap_one_line()
+{
+    char paragraph[] = "Mary had a little lamb it's fleece was white as snow. And everywhere that Mary went, the lamb was sure to go";
+    const char *lines[] = {
+        "Mary had a little",
+        "lamb it's fleece was",
+        "white as snow. And",
+        "everywhere that Mary",
+        "went, the lamb was",
+        "sure to go"
+    };
+    test_wordwrap(paragraph,lines,6);
+}
+
+void test_wrap_newlines_line()
+{
+    char paragraph[] = "Mary had a little lamb it's fleece was white as snow.\nAnd everywhere that Mary went, the lamb was sure to go";
+    const char *lines[] = {
+        "Mary had a little",
+        "lamb it's fleece was",
+        "white as snow.", 
+        "And everywhere that",
+        "Mary went, the lamb",
+        "was sure to go"
+    };
+    test_wordwrap(paragraph,lines,6);
+}
+
+
+void test_wrap_short()
+{
+    char paragraph[] = "Mary had a";
+    const char *lines[] = {
+        "Mary had a"        
+    };
+    test_wordwrap(paragraph,lines,1);
 }
 
 void trivialTest(void) {
@@ -55,7 +89,9 @@ void setup()
     delay(2000);
     UNITY_BEGIN();
     RUN_TEST(trivialTest);
-    RUN_TEST(test_wordwrap);
+    RUN_TEST(test_wrap_one_line);
+    RUN_TEST(test_wrap_newlines_line);
+    RUN_TEST(test_wrap_short);
     UNITY_END();
 }
 

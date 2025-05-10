@@ -192,6 +192,7 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
     bool foundNewline = true;
     char *insertedNull = endOfLine;
     char *nextLine;
+    int lineLength=0;
     
     int width=0;
     if(endOfLine==NULL){
@@ -220,7 +221,7 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
             }
             else {
                 prevSpace[0]='\0';
-                block_c = prevSpace+1;
+                //block_c = prevSpace+1;
                 endOfLine=prevSpace+1;
                 nextLine = endOfLine;
                 break;
