@@ -2,13 +2,6 @@
 #include "gui-utils.h"
 
 
-
-
-int choice_positions[10];
-int num_choice_pos = 0;
-int current_choice = 0;
-
-
 // int padding = 5;
 // int current_indent = padding;
 // int cursor_x = padding;
@@ -31,24 +24,26 @@ int current_choice = 0;
 // }
 
 
-void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
+void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &selected_choice)
 {
 
     int numChoices = paginator.currentPage().getNumSelectionAreas();
     for(int i=0;i<numChoices;i++){
-        M5EPD_Canvas* icon = (i==current_choice)? &selected_icon: &unselected_icon;
+        M5EPD_Canvas* icon = (i==selected_choice)? &selected_icon: &unselected_icon;
         SelectionArea choice = paginator.currentPage().getSelectionArea(i);
         icon->pushCanvas(choice.minX-icon->width(),choice.minY,UPDATE_MODE_DU4);
         Serial.print(choice.minX);
         Serial.print(",");
         Serial.print(choice.minY);
         Serial.print(" ");
-        Serial.println(i==current_choice);
+        Serial.println(i==selected_choice);
     }
 }
 
-bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
+bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &current_choice)
 {
+    int num_choice_pos = paginator.currentPage().getNumSelectionAreas();
+        
     M5.TP.update();
     if(M5.TP.available() && !M5.TP.isFingerUp()){
         
@@ -58,20 +53,19 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         // Serial.print("y=");
         // Serial.print(finger.y);
         // Serial.println("");
-
+        
         for(int i=0;i<num_choice_pos;i++){
             SelectionArea selectionArea = paginator.currentPage().getSelectionArea(i);
-            int maxY = +canvas.fontHeight();
             bool inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
             if(inY){
                 current_choice=i;
-                draw_selection_cursor(paginator,selected_icon,unselected_icon);
+                draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
                 while(!M5.TP.isFingerUp()){
                     finger = M5.TP.readFinger(0);
                     delay(5);
                     M5.TP.update();
                 }
-                inY = finger.y>choice_positions[i] && finger.y<maxY;
+                inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
                 if(inY){
                     Serial.println("finger up inside of bounds");
                     return true;
@@ -91,7 +85,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
             current_choice=-1;
             //current_choice=num_choice_pos-1;
         }
-        draw_selection_cursor(paginator,selected_icon,unselected_icon);
+        draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }
     if(M5.BtnR.wasPressed()){
         Serial.println('+');
@@ -103,7 +97,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
             }
             //current_choice=0;
         }
-        draw_selection_cursor(paginator,selected_icon,unselected_icon);
+        draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }    
     if(M5.BtnP.wasPressed() && current_choice>=0){
         Serial.println("button down");
@@ -128,8 +122,8 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
         if( strcmp(name+len-4,".bin")==0 ){
             Serial.print("file: ");
             Serial.println(name);
-            // auto fileName = files[num_files]=(char*)malloc(len+1);
-            // strcpy(fileName,name);
+            char* fileName = files[num_files]=(char*)malloc(len+1);
+            strcpy(fileName,name);
             int y=100+num_files*2*canvas.fontHeight();
             paginator.addChoice(num_files,name);
             num_files++;
@@ -139,30 +133,31 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
     }
     heap_caps_check_integrity_all(true);
     
-    num_choice_pos=num_files;
+    int selected_choice = 0;
     paginator.renderPage();
-    canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-    draw_selection_cursor(paginator,selected_icon,unselected_icon);
+    
+    draw_selection_cursor(paginator,selected_icon,unselected_icon, selected_choice);
     M5.update();
 
-    while(!check_selection(paginator,canvas,selected_icon,unselected_icon)){
+    while(!check_selection(paginator,canvas,selected_icon,unselected_icon, selected_choice)){
         M5.update();
         delay(10);
     }
     root.close();
     Serial.print("Option ");
-    Serial.print(current_choice);
+    Serial.print(selected_choice);
     Serial.print(" ");
-    Serial.print(files[current_choice]);
+    Serial.print(files[selected_choice]);
     Serial.println(" selected");
-    const char* filename = files[current_choice];
+    const char* filename = files[selected_choice];
     int filename_len = strlen(filename);
     char* story_filename = (char*)malloc(filename_len+2);
     story_filename[0]='/';
     strcpy(story_filename+1,filename);
 
-    current_choice=0;
-    num_choice_pos=0;
+    for(int i=num_files-1;i>=num_files;i--){
+        free((void*)files[i]);
+    }
 
     heap_caps_check_integrity_all(true);
 
@@ -345,15 +340,7 @@ void gui_draw(M5EPD_Canvas &canvas)
     canvas.pushCanvas(0, 0, UPDATE_MODE_DU);
 }
 
-int get_num_choices()
-{
-    return num_choice_pos;
-}
 
-int get_current_choice()
-{
-    return current_choice;
-}
 
 // void add_choice_option(const char* name)
 // {
@@ -372,10 +359,6 @@ int get_current_choice()
 //     num_choice_pos++;
 // }
 
-void clear_choices(){
-    num_choice_pos=0;
-    current_choice=-1;
-}
 
 // void set_indent(int indent)
 // {

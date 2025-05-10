@@ -62,7 +62,6 @@ void write_story_section(Paginator &paginator)
 void write_choices(Paginator &paginator)
 {
     paginator.addLineBreak();
-    clear_choices();
     // Iterate choices
     if (_thread->has_choices())
     {
@@ -100,7 +99,7 @@ void load_story(const char* story_filename)
     Serial.println(story_filename);
     File file = SPIFFS.open(story_filename);
     const int test_story_bin_len = file.size();
-    char* test_story_bin = (char*)malloc(test_story_bin_len);
+    char* test_story_bin = (char*)malloc(test_story_bin_len+1);
     file.readBytes(test_story_bin,test_story_bin_len);
     if(myInk){
         delete myInk;

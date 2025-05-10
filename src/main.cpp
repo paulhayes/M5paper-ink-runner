@@ -50,16 +50,17 @@ void loop()
 {
     delay(20);
     M5.update();
+    int selected_choice = -1;
     if(!paginator.hasChoices()){
         if(M5.BtnP.wasPressed()){
             select_story();
         }
     }
-    else if(check_selection(paginator,canvas,selected_icon,unselected_icon)){
+    else if(check_selection(paginator,canvas,selected_icon,unselected_icon,selected_choice)){
         
         Serial.print("> user selected ");
-        Serial.println(get_current_choice()); 
-        story_choice(get_current_choice());
+        Serial.println(selected_choice); 
+        story_choice(selected_choice);
         //clear_choices();
         contine_story(paginator);
     }
@@ -68,7 +69,6 @@ void loop()
 
 void select_story()
 {
-    clear_choices();
     //gui_clear(canvas);
     paginator.clear();
     story_filename=select_file(canvas, paginator, "Select Story",selected_icon,unselected_icon);

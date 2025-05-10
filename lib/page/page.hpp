@@ -34,7 +34,7 @@ class Page
     int getNumSelectionAreas();
     void addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY);    
     CopyBlock getCopy(int index);
-    void render(M5EPD_Canvas canvas);
+    void render(M5EPD_Canvas &canvas);
     
     //CopyBlock getOption(int index);
 };

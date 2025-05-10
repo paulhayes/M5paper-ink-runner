@@ -64,7 +64,7 @@ CopyBlock Page::getCopy(int index)
     return this->copySections[index];
 }
 
-void Page::render(M5EPD_Canvas canvas)
+void Page::render(M5EPD_Canvas &canvas)
 {
     canvas.clear();
     Serial.println("Rendering");
@@ -104,12 +104,12 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
         this->addPage();
     }
     this->cursorX = this->indent = 40;
-    Serial.println("word wrapping");
+    //Serial.println("word wrapping");
     int startPage = this->currentPageIndex;
     int startY = this->cursorY;
     int startX = this->cursorX;
     this->wordWrap(copy);
-    Serial.println("adding selection area");
+    //Serial.println("adding selection area");
     if(startPage < this->currentPageIndex){  
         for(int pageIndex=startPage;pageIndex<this->currentPageIndex;pageIndex++){
             this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
@@ -117,7 +117,7 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
         }
     }
     this->currentPage().addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
-    Serial.println("selection area added");
+    //Serial.println("selection area added");
     currentPage().printCopy();
 }
 
@@ -127,6 +127,7 @@ void Paginator::addLineBreak()
         this->addPage();
     }
     this->cursorY+=this->m_canvas.fontHeight();
+    this->cursorX=this->indent;
     if(this->cursorY>this->m_canvas.height()){            
         this->addPage();            
     }
@@ -212,8 +213,9 @@ void Paginator::clear()
         delete(this->pages[i]);
     }
     this->numPages=0;
-    cursorX=0;
-    cursorY=0;
+    indent=padding;
+    cursorX=padding;
+    cursorY=padding;
 }
 
 bool Paginator::hasChoices()
@@ -230,7 +232,7 @@ void Paginator::renderPage()
 {
     Page &page = currentPage();
     page.render(this->m_canvas);
-    
+    m_canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
 }
 
 bool Paginator::nextPage()
