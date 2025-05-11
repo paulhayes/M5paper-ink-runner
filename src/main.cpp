@@ -46,7 +46,7 @@ void setup()
 }
 
 
-int selected_choice = 0;
+int selected_choice = -1;
 void loop()
 {
     delay(20);
@@ -61,7 +61,7 @@ void loop()
         Serial.print("> user selected ");
         Serial.println(selected_choice); 
         story_choice(selected_choice);
-        selected_choice = 0;
+        selected_choice = -1;
         //clear_choices();
         contine_story(paginator);
         draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);       

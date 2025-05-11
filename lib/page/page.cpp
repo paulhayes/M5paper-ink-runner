@@ -105,12 +105,12 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
     }
     this->cursorX = this->indent = 40;
     //Serial.println("word wrapping");
-    int startPage = this->currentPageIndex;
+    int startPage = numPages-1;
     int startY = this->cursorY;
     int startX = this->cursorX;
     this->wordWrap(copy);
     //Serial.println("adding selection area");
-    if(startPage < numPages){  
+    if(startPage < (numPages-1)){  
         for(int pageIndex=startPage;pageIndex<(numPages-1);pageIndex++){
             this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
             startY = 0;
@@ -212,10 +212,11 @@ void Paginator::clear()
     for(int i=0;i<numPages;i++){
         delete(this->pages[i]);
     }
-    this->numPages=0;
+    numPages=0;
     indent=padding;
     cursorX=padding;
     cursorY=padding;
+    currentPageIndex=0;
 }
 
 bool Paginator::hasChoices()
