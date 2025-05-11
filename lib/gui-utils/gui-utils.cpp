@@ -24,7 +24,7 @@
 // }
 
 
-void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &selected_choice)
+void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int selected_choice)
 {
 
     int numChoices = paginator.currentPage().getNumSelectionAreas();
@@ -42,7 +42,7 @@ void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5E
 
 bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &current_choice)
 {
-    int num_choice_pos = paginator.currentPage().getNumSelectionAreas();
+    int num_choices = paginator.currentPage().getNumSelectionAreas();
         
     M5.TP.update();
     if(M5.TP.available() && !M5.TP.isFingerUp()){
@@ -54,7 +54,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         // Serial.print(finger.y);
         // Serial.println("");
         
-        for(int i=0;i<num_choice_pos;i++){
+        for(int i=0;i<num_choices;i++){
             SelectionArea selectionArea = paginator.currentPage().getSelectionArea(i);
             bool inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
             if(inY){
@@ -76,26 +76,30 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         }
     }
     if( M5.BtnL.wasPressed() ){
-        Serial.println('-');
+        Serial.println("-1");
         current_choice--;
         if(current_choice<0){
+            current_choice=-1;
             if(paginator.previousPage()){
                 paginator.renderPage();
+                current_choice=num_choices-1;
             }
-            current_choice=-1;
-            //current_choice=num_choice_pos-1;
         }
         draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }
     if(M5.BtnR.wasPressed()){
-        Serial.println('+');
+        Serial.print(current_choice);
+        Serial.print(' ');
+        Serial.print(num_choices);
+        Serial.println(" +1");
         current_choice++;
-        if(current_choice>=num_choice_pos){
-            current_choice=num_choice_pos;
+        if(current_choice>=num_choices){
+            current_choice=num_choices;
+            current_choice=num_choices-1;
             if(paginator.nextPage()){
                 paginator.renderPage();
+                current_choice=0;
             }
-            //current_choice=0;
         }
         draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }    
@@ -208,7 +212,6 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
             nextSpace[0]='\0';
             endOfLine=nextNewline;
             nextLine=nextNewline+1;
-            break;
         }
         else {
             replacedChar=' ';
@@ -223,12 +226,14 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
             }
             else {
                 prevSpace[0]='\0';
-                endOfLine=prevSpace+1;
-                nextLine = endOfLine;
+                nextLine = prevSpace+1;
                 break;
             }
         }
-        else {
+        else if(replacedChar=='\n'){
+            nextLine=nextSpace+1;
+            nextSpace[0]='\0';
+            break;
         }
         prevSpace = nextSpace;
         nextSpace = strchr(nextSpace+1,' ');        

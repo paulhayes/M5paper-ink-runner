@@ -7,7 +7,7 @@ typedef std::function<int16_t(const char*)> widthCallbackFunc;
 // int line_height();
 // bool vertical_overflow();
 void setup_gui(M5EPD_Canvas *canvas, M5EPD_Canvas* selected_icon, M5EPD_Canvas* unselected_icon);
-void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &selected_choice);
+void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int selected_choice);
 char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* title,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon);
 bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &current_choice);
 //char* wrap_one_line(M5EPD_Canvas &canvas,const char *block_c);

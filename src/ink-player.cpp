@@ -26,7 +26,9 @@ void contine_story(Paginator &paginator)
     //gui_draw();
     //draw_selection_cursor();
     paginator.renderPage();
-    Serial.println("Redraw complete");
+    
+
+    Serial.println("Redraw complete");    
 }
 
 void write_story_section(Paginator &paginator)

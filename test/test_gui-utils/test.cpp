@@ -84,9 +84,20 @@ void test_wrap_empty()
 {
     char paragraph[] = "\n";
     const char *lines[] = {
-        ""        
+        "\n"        
     };
     test_wordwrap(paragraph,lines,1);
+}
+
+void test_wrap_short_withnewline()
+{
+    char paragraph[] = "Mary had a little lamb\nit's fleece was white";
+    const char *lines[] = {
+        "Mary had a little",
+        "lamb",
+        "it's fleece was white"        
+    };
+    test_wordwrap(paragraph,lines,3);
 }
 
 void trivialTest(void) {
@@ -102,6 +113,7 @@ void setup()
     RUN_TEST(test_wrap_short);
     RUN_TEST(test_wrap_newlines_line);
     RUN_TEST(test_wrap_empty);
+    RUN_TEST(test_wrap_short_withnewline);
     UNITY_END();
 }
 

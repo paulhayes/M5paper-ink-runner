@@ -110,13 +110,13 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
     int startX = this->cursorX;
     this->wordWrap(copy);
     //Serial.println("adding selection area");
-    if(startPage < this->currentPageIndex){  
-        for(int pageIndex=startPage;pageIndex<this->currentPageIndex;pageIndex++){
+    if(startPage < numPages){  
+        for(int pageIndex=startPage;pageIndex<(numPages-1);pageIndex++){
             this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
             startY = 0;
         }
     }
-    this->currentPage().addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
+    this->getLastPage()->addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
     //Serial.println("selection area added");
     currentPage().printCopy();
 }
@@ -161,9 +161,9 @@ void Paginator::wordWrap(const char *text){
         Serial.println(line_c);
         Serial.print("Leftover:");
         Serial.println(next_line);
-        if(this->cursorY>this->m_canvas.height()){
-            
-            this->addPage();            
+        if(this->cursorY > (m_canvas.height()-m_canvas.fontHeight())){
+            Serial.println("Adding page");
+            this->addPage();
         }
         this->getLastPage()->addLine(line_c, this->cursorX, this->cursorY);
         this->cursorY+=m_canvas.fontHeight();

@@ -46,11 +46,11 @@ void setup()
 }
 
 
+int selected_choice = 0;
 void loop()
 {
     delay(20);
     M5.update();
-    int selected_choice = -1;
     if(!paginator.hasChoices()){
         if(M5.BtnP.wasPressed()){
             select_story();
@@ -63,7 +63,13 @@ void loop()
         story_choice(selected_choice);
         //clear_choices();
         contine_story(paginator);
+        draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);
+        
+        selected_choice = 0;
+        Serial.print("free mem:");
+        Serial.println(heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
     }
+    
     
 }
 
@@ -75,6 +81,8 @@ void select_story()
     load_story(story_filename);
     free(story_filename);
     contine_story(paginator);
+    draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);
+        
 }
 
 #endif
