@@ -6,8 +6,8 @@
 Page::~Page()
 {
     for(int i=numCopySections-1;i>=0;i--){
-        Serial.print("Deleting :");
-        Serial.println(copySections[i].text);
+        // Serial.print("Deleting :");
+        // Serial.println(copySections[i].text);
         free((void*)copySections[i].text);
     }
 }
@@ -49,6 +49,15 @@ int Page::getNumSelectionAreas()
 
 void Page::addSelectionArea(int choiceIndex, int minX, int maxX, int minY, int maxY)
 {
+    // Serial.print("addSelectionArea ");
+    // Serial.print(minX);
+    // Serial.print(",");
+    // Serial.print(minY);
+    // Serial.print(",");
+    // Serial.print(maxX);
+    // Serial.print(",");
+    // Serial.println(maxY);
+
     this->choices[numSelectionAreas] = {choiceIndex,minX,maxX,minY,maxY};
     numSelectionAreas++;
 }
@@ -67,18 +76,18 @@ CopyBlock Page::getCopy(int index)
 void Page::render(M5EPD_Canvas &canvas)
 {
     canvas.clear();
-    Serial.println("Rendering");
+    // Serial.println("Rendering");
     for(int i=0;i < this->numCopySections;i++){
         auto section = this->copySections[i];
         int lineAddr = *(section.text);
-        Serial.print(section.text);
-        Serial.print(" addr=");
-        Serial.print(lineAddr);
-        Serial.print(" x=");
-        Serial.print(section.x);
-        Serial.print(" y=");
-        Serial.print(section.y);
-        Serial.println(" ");
+        // Serial.print(section.text);
+        // Serial.print(" addr=");
+        // Serial.print(lineAddr);
+        // Serial.print(" x=");
+        // Serial.print(section.x);
+        // Serial.print(" y=");
+        // Serial.print(section.y);
+        // Serial.println(" ");
         canvas.drawString(this->copySections[i].text,this->copySections[i].x,this->copySections[i].y);
     }
 }
@@ -117,8 +126,7 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
         }
     }
     this->getLastPage()->addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
-    //Serial.println("selection area added");
-    currentPage().printCopy();
+    //currentPage().printCopy();
 }
 
 void Paginator::addLineBreak()
@@ -139,7 +147,7 @@ void Paginator::wordWrap(const char *text){
     char* line_c = alloc_text;
     
     while(line_c && *line_c!='\0'){
-        Serial.println("Settings out one line");
+        // Serial.println("Settings out one line");
         //int16_t (*callbackMethod)(const char*) = &(M5EPD_Canvas::textWidth);
         //auto callbackMethod = std::mem_fn(static_cast<int16_t (M5EPD_Canvas::*)(const char*)>(&M5EPD_Canvas::textWidth));
         //auto callback = std::bind(static_cast<int16_t (M5EPD_Canvas::*)(const char*)>(&M5EPD_Canvas::textWidth), &this->m_canvas, std::placeholders::_1);
@@ -148,19 +156,19 @@ void Paginator::wordWrap(const char *text){
         widthCallbackFunc callback = [&](const char* str) -> int16_t { return canvas.textWidth(str); };
         //auto callback = [&](const char* str) ->canvas.textWidth(str);
         
-        Serial.print("line pointer before wrap ");
+        // Serial.print("line pointer before wrap ");
         unsigned int lineAddr = (int)line_c;
-        Serial.print(lineAddr);
-        Serial.print(" ");
-        Serial.println(line_c);
+        // Serial.print(lineAddr);
+        // Serial.print(" ");
+        // Serial.println(line_c);
         char *next_line = wrap_one_line(line_c, this->m_canvas.width()-this->cursorX,callback);
-        Serial.print("line pointer after wrap ");
+        // Serial.print("line pointer after wrap ");
         lineAddr = (int)line_c;
-        Serial.print(lineAddr);
-        Serial.print(" ");
-        Serial.println(line_c);
-        Serial.print("Leftover:");
-        Serial.println(next_line);
+        // Serial.print(lineAddr);
+        // Serial.print(" ");
+        // Serial.println(line_c);
+        // Serial.print("Leftover:");
+        // Serial.println(next_line);
         if(this->cursorY > (m_canvas.height()-m_canvas.fontHeight())){
             Serial.println("Adding page");
             this->addPage();
@@ -196,8 +204,8 @@ Page* Paginator::addPage()
     }
     pages[this->numPages] = new Page();
     this->numPages++;
-    this->cursorX=0;
-    this->cursorY=0;
+    this->cursorX=indent;
+    this->cursorY=padding;
     return this->getLastPage();
 }
 

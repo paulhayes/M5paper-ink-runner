@@ -51,13 +51,14 @@ void loop()
 {
     delay(20);
     M5.update();
-    if(!paginator.hasChoices()){
-        if(M5.BtnP.wasPressed()){
-            select_story();
+    if(check_selection(paginator,canvas,selected_icon,unselected_icon,selected_choice)){
+        if(selected_choice==-1){
+            if(!paginator.hasChoices()){
+                select_story();
+            }
+            return;
         }
-    }
-    else if(check_selection(paginator,canvas,selected_icon,unselected_icon,selected_choice)){
-        
+     
         Serial.print("> user selected ");
         Serial.println(selected_choice); 
         story_choice(selected_choice);

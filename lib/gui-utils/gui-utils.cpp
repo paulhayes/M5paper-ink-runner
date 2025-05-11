@@ -31,12 +31,19 @@ void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5E
     for(int i=0;i<numChoices;i++){
         M5EPD_Canvas* icon = (i==selected_choice)? &selected_icon: &unselected_icon;
         SelectionArea choice = paginator.currentPage().getSelectionArea(i);
-        icon->pushCanvas(choice.minX-icon->width(),choice.minY,UPDATE_MODE_DU4);
+        Serial.print("Choice ");
+        Serial.print(i);
+        Serial.print(": ");
         Serial.print(choice.minX);
         Serial.print(",");
         Serial.print(choice.minY);
         Serial.print(" ");
-        Serial.println(i==selected_choice);
+        Serial.print(choice.maxX);
+        Serial.print(",");
+        Serial.print(choice.maxY);
+        Serial.print(" ");
+        Serial.println(i==selected_choice?"SELECTED":"");
+        icon->pushCanvas(choice.minX-icon->width(),choice.minY,UPDATE_MODE_DU4);
     }
 }
 
@@ -76,7 +83,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         }
     }
     if( M5.BtnL.wasPressed() ){
-        Serial.println("-1");
+        Serial.println("up");
         current_choice--;
         if(current_choice<0){
             current_choice=-1;
@@ -89,10 +96,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }
     if(M5.BtnR.wasPressed()){
-        Serial.print(current_choice);
-        Serial.print(' ');
-        Serial.print(num_choices);
-        Serial.println(" +1");
+        Serial.println("down");
         current_choice++;
         if(current_choice>=num_choices){
             current_choice=num_choices-1;
@@ -104,7 +108,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         }
         draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }    
-    if(M5.BtnP.wasPressed() && current_choice>=0){
+    if( M5.BtnP.wasPressed() ){
         Serial.println("button down");
         return true;
     }
@@ -125,14 +129,14 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
         const char* name=file.name();
         int len=strlen(name);
         if( strcmp(name+len-4,".bin")==0 ){
-            Serial.print("file: ");
-            Serial.println(name);
+            // Serial.print("file: ");
+            // Serial.println(name);
             char* fileName = files[num_files]=(char*)malloc(len+1);
             strcpy(fileName,name);
             int y=100+num_files*2*canvas.fontHeight();
             paginator.addChoice(num_files,name);
             num_files++;
-            Serial.println("Next file");
+            // Serial.println("Next file");
         }
         file.close();
     }
@@ -191,8 +195,8 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
     // strcpy(block_c,ref_current_line);
     char* block_c = ref_current_line;
 
-    Serial.print("wrapping first line of ");
-    Serial.println(block_c);
+    // Serial.print("wrapping first line of ");
+    // Serial.println(block_c);
     char *endOfLine=block_c+strlen(block_c);
     char* nextNewline = strchr(block_c, '\n');
     char *nextSpace = strchr(block_c,' ');
