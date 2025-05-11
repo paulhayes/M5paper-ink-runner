@@ -82,6 +82,7 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
             current_choice=-1;
             if(paginator.previousPage()){
                 paginator.renderPage();
+                num_choices = paginator.currentPage().getNumSelectionAreas();
                 current_choice=num_choices-1;
             }
         }
@@ -94,10 +95,10 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         Serial.println(" +1");
         current_choice++;
         if(current_choice>=num_choices){
-            current_choice=num_choices;
             current_choice=num_choices-1;
             if(paginator.nextPage()){
                 paginator.renderPage();
+                num_choices = paginator.currentPage().getNumSelectionAreas();
                 current_choice=0;
             }
         }
