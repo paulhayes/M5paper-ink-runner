@@ -205,17 +205,15 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
     if(nextSpace==NULL){
         nextLine = endOfLine;
     }
-    while(nextSpace!=NULL && (uintptr_t)nextSpace<(uintptr_t)endOfLine) {
+    while(nextSpace!=NULL && (uintptr_t)nextSpace<=(uintptr_t)endOfLine) {
+
         if(nextNewline!=NULL && (uintptr_t)nextNewline<(uintptr_t)nextSpace){
             nextSpace = nextNewline;
-            replacedChar='\n';
-            nextSpace[0]='\0';
             endOfLine=nextNewline;
             nextLine=nextNewline+1;
         }
-        else {
-            replacedChar=' ';
-        }
+        
+        replacedChar=nextSpace[0];
         nextSpace[0]='\0';
         insertedNull=nextSpace;
         width = width_callback(block_c);
@@ -235,8 +233,15 @@ char* wrap_one_line(char *&ref_current_line, int max_line_width, widthCallbackFu
             nextSpace[0]='\0';
             break;
         }
+        if(nextSpace==endOfLine){
+            nextLine=nextSpace;
+            break;
+        }
         prevSpace = nextSpace;
-        nextSpace = strchr(nextSpace+1,' ');        
+        nextSpace = strchr(nextSpace+1,' '); 
+        if(nextSpace==NULL){
+            nextSpace=endOfLine;
+        }
     }
     int len = strlen(block_c);
     ref_current_line = (char*)malloc(len+1);

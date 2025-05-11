@@ -61,11 +61,10 @@ void loop()
         Serial.print("> user selected ");
         Serial.println(selected_choice); 
         story_choice(selected_choice);
+        selected_choice = 0;
         //clear_choices();
         contine_story(paginator);
-        draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);
-        
-        selected_choice = 0;
+        draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);       
         Serial.print("free mem:");
         Serial.println(heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
     }
