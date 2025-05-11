@@ -119,8 +119,11 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
     int startX = this->cursorX;
     this->wordWrap(copy);
     //Serial.println("adding selection area");
-    if(startPage < (numPages-1)){  
+    if(startPage < (numPages-1)){        
         for(int pageIndex=startPage;pageIndex<(numPages-1);pageIndex++){
+            if(startY>=m_canvas.height()){
+                continue;
+            }
             this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
             startY = 0;
         }
