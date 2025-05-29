@@ -54,9 +54,13 @@ class Paginator
     int numPages;
     int cursorX;
     int cursorY;
+    int canvasOffsetY;
     int currentPageIndex = 0;
-    int padding = 5;
-    int indent = padding;
+    int marginTop = 5;
+    int marginBottom = 5;
+    int marginLeft = 5;
+    int marginRight = 5;
+    int indent = marginLeft;
     Paginator(M5EPD_Canvas &canvas):m_canvas(canvas)
     {
     }

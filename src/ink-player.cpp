@@ -16,18 +16,14 @@ runner _thread;
 
 void contine_story(Paginator &paginator)
 {
+    
     Serial.println("contine story");
-    //gui_clear();
     paginator.clear();
     write_story_section(paginator);
     paginator.indent = 40;
     paginator.addLineBreak();
     write_choices(paginator);
-    //gui_draw();
-    //draw_selection_cursor();
     paginator.renderPage();
-    
-
     Serial.println("Redraw complete");    
 }
 

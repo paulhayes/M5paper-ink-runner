@@ -121,14 +121,15 @@ void Paginator::addChoice(int choiceIndex, const char *copy)
     //Serial.println("adding selection area");
     if(startPage < (numPages-1)){        
         for(int pageIndex=startPage;pageIndex<(numPages-1);pageIndex++){
-            if(startY>=m_canvas.height()){
+            if(startY>=(m_canvas.height()-marginBottom)){
+                startY=0;
                 continue;
             }
-            this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,this->m_canvas.width(),startY,this->m_canvas.height());
+            this->pages[pageIndex]->addSelectionArea(choiceIndex, startX,m_canvas.width(),startY,m_canvas.height()-marginBottom);
             startY = 0;
         }
     }
-    this->getLastPage()->addSelectionArea(choiceIndex,startX,m_canvas.width(),startY,this->cursorY);
+    this->getLastPage()->addSelectionArea(choiceIndex,startX,m_canvas.width()-marginRight,startY,cursorY);
     //currentPage().printCopy();
 }
 
@@ -164,7 +165,7 @@ void Paginator::wordWrap(const char *text){
         // Serial.print(lineAddr);
         // Serial.print(" ");
         // Serial.println(line_c);
-        char *next_line = wrap_one_line(line_c, this->m_canvas.width()-this->cursorX,callback);
+        char *next_line = wrap_one_line(line_c, this->m_canvas.width()-cursorX-marginRight,callback);
         // Serial.print("line pointer after wrap ");
         lineAddr = (int)line_c;
         // Serial.print(lineAddr);
@@ -172,11 +173,11 @@ void Paginator::wordWrap(const char *text){
         // Serial.println(line_c);
         // Serial.print("Leftover:");
         // Serial.println(next_line);
-        if(this->cursorY > (m_canvas.height()-m_canvas.fontHeight())){
+        if(this->cursorY > (m_canvas.height()-m_canvas.fontHeight()-marginBottom)){
             Serial.println("Adding page");
             this->addPage();
         }
-        this->getLastPage()->addLine(line_c, this->cursorX, this->cursorY);
+        this->getLastPage()->addLine(line_c, cursorX, cursorY);
         this->cursorY+=m_canvas.fontHeight();
         this->cursorX=this->indent;
         //next_line();
@@ -208,7 +209,7 @@ Page* Paginator::addPage()
     pages[this->numPages] = new Page();
     this->numPages++;
     this->cursorX=indent;
-    this->cursorY=padding;
+    this->cursorY=marginTop;
     return this->getLastPage();
 }
 
@@ -224,9 +225,9 @@ void Paginator::clear()
         delete(this->pages[i]);
     }
     numPages=0;
-    indent=padding;
-    cursorX=padding;
-    cursorY=padding;
+    indent=marginLeft;
+    cursorX=indent;
+    cursorY=marginTop;
     currentPageIndex=0;
 }
 
@@ -244,7 +245,7 @@ void Paginator::renderPage()
 {
     Page &page = currentPage();
     page.render(this->m_canvas);
-    m_canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+    m_canvas.pushCanvas(0, canvasOffsetY, UPDATE_MODE_DU4);
 }
 
 bool Paginator::nextPage()

@@ -24,13 +24,13 @@
 // }
 
 
-void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int selected_choice)
+void draw_selection_cursor(GuiElements gui_elements, int selected_choice)
 {
 
-    int numChoices = paginator.currentPage().getNumSelectionAreas();
+    int numChoices = gui_elements.paginator.currentPage().getNumSelectionAreas();
     for(int i=0;i<numChoices;i++){
-        M5EPD_Canvas* icon = (i==selected_choice)? &selected_icon: &unselected_icon;
-        SelectionArea choice = paginator.currentPage().getSelectionArea(i);
+        M5EPD_Canvas* icon = (i==selected_choice)? &gui_elements.selected_icon: &gui_elements.unselected_icon;
+        SelectionArea choice = gui_elements.paginator.currentPage().getSelectionArea(i);
         Serial.print("Choice ");
         Serial.print(i);
         Serial.print(": ");
@@ -43,14 +43,15 @@ void draw_selection_cursor(Paginator &paginator,M5EPD_Canvas &selected_icon, M5E
         Serial.print(choice.maxY);
         Serial.print(" ");
         Serial.println(i==selected_choice?"SELECTED":"");
-        icon->pushCanvas(choice.minX-icon->width(),choice.minY,UPDATE_MODE_DU4);
+        icon->pushCanvas(choice.minX-icon->width(),choice.minY+gui_elements.top_bar.height(),UPDATE_MODE_DU4);
     }
 }
 
-bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon, int &current_choice)
+bool check_selection(GuiElements gui_elements, int &current_choice)
 {
-    int num_choices = paginator.currentPage().getNumSelectionAreas();
-        
+    int num_choices = gui_elements.paginator.currentPage().getNumSelectionAreas();
+    bool choice_made = false;
+    bool redraw_selection = false;
     M5.TP.update();
     if(M5.TP.available() && !M5.TP.isFingerUp()){
         
@@ -62,66 +63,73 @@ bool check_selection(Paginator &paginator, M5EPD_Canvas &canvas, M5EPD_Canvas &s
         // Serial.println("");
         
         for(int i=0;i<num_choices;i++){
-            SelectionArea selectionArea = paginator.currentPage().getSelectionArea(i);
+            SelectionArea selectionArea = gui_elements.paginator.currentPage().getSelectionArea(i);
+            selectionArea.minY+=gui_elements.top_bar.height();
+            selectionArea.maxY+=gui_elements.top_bar.height();
             bool inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
-            if(inY){
+            if(M5.TP.isFingerUp() && inY && current_choice==i){
+                //finger = M5.TP.readFinger(0);
+                //M5.TP.update();
+                choice_made = true;
+            }
+            else if(inY && current_choice!=i){
                 current_choice=i;
-                draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
-                while(!M5.TP.isFingerUp()){
-                    finger = M5.TP.readFinger(0);
-                    delay(5);
-                    M5.TP.update();
-                }
-                inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
-                if(inY){
-                    Serial.println("finger up inside of bounds");
-                    return true;
-                }
-                Serial.println("finger up outside of bounds");
-                return false;
+                redraw_selection=true;
+                
+                // inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
+                // if(inY){
+                //     Serial.println("finger up inside of bounds");
+                //     choice_made = true;
+                // }
+                // Serial.println("finger up outside of bounds");
             }
         }
     }
-    if( M5.BtnL.wasPressed() ){
+    else if( M5.BtnL.wasPressed() ){
         Serial.println("up");
+        redraw_selection=true;
         current_choice--;
         if(current_choice<0){
             current_choice=-1;
-            if(paginator.previousPage()){
-                paginator.renderPage();
-                num_choices = paginator.currentPage().getNumSelectionAreas();
+            if(gui_elements.paginator.previousPage()){
+                gui_elements.paginator.renderPage();
+                num_choices = gui_elements.paginator.currentPage().getNumSelectionAreas();
                 current_choice=num_choices-1;
             }
         }
-        draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
+//        draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }
-    if(M5.BtnR.wasPressed()){
+    else if(M5.BtnR.wasPressed()){
         Serial.println("down");
+        redraw_selection=true;
         current_choice++;
         if(current_choice>=num_choices){
             current_choice=num_choices-1;
-            if(paginator.nextPage()){
-                paginator.renderPage();
-                num_choices = paginator.currentPage().getNumSelectionAreas();
+            if(gui_elements.paginator.nextPage()){
+                gui_elements.paginator.renderPage();
+                num_choices = gui_elements.paginator.currentPage().getNumSelectionAreas();
                 current_choice=0;
             }
         }
-        draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }    
-    if( M5.BtnP.wasPressed() ){
+    else if( M5.BtnP.wasPressed() ){
         Serial.println("button down");
-        return true;
+        choice_made=true;
     }
-    return false;
+    if(redraw_selection){
+        menu_bar_draw(gui_elements.top_bar,gui_elements.paginator);
+        draw_selection_cursor(gui_elements,current_choice);        
+    }
+    return choice_made;
 }
 
-char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titlePaginator, M5EPD_Canvas &selected_icon, M5EPD_Canvas &unselected_icon)
+char* select_file(GuiElements gui_elements, const char* titlePaginator)
 {
-    canvas.clear();
+    gui_elements.canvas.clear();
     char* title = (char*)malloc(strlen(titlePaginator)+1);
     strcpy(title,titlePaginator);
-    paginator.addCopy(title);
-    File root = SPIFFS.open("/");
+    gui_elements.paginator.addCopy(title);
+    File root = SD.open("/");
     File file;
     char *files[10];
     int num_files=0;
@@ -133,22 +141,22 @@ char* select_file(M5EPD_Canvas &canvas, Paginator &paginator, const char* titleP
             // Serial.println(name);
             char* fileName = files[num_files]=(char*)malloc(len+1);
             strcpy(fileName,name);
-            int y=100+num_files*2*canvas.fontHeight();
-            paginator.addChoice(num_files,name);
+            int y=100+num_files*2*gui_elements.canvas.fontHeight();
+            gui_elements.paginator.addChoice(num_files,name);
             num_files++;
             // Serial.println("Next file");
         }
         file.close();
     }
-    heap_caps_check_integrity_all(true);
+    //heap_caps_check_integrity_all(true);
     
     int selected_choice = 0;
-    paginator.renderPage();
+    gui_elements.paginator.renderPage();
     
-    draw_selection_cursor(paginator,selected_icon,unselected_icon, selected_choice);
+    draw_selection_cursor(gui_elements, selected_choice);
     M5.update();
 
-    while(!check_selection(paginator,canvas,selected_icon,unselected_icon, selected_choice)){
+    while(!check_selection(gui_elements,selected_choice)){
         M5.update();
         delay(10);
     }
@@ -333,31 +341,52 @@ void copyRect(M5EPD_Canvas *src, M5EPD_Canvas *dst, int w, int h)
     }
 }
 
-void setup_gui(M5EPD_Canvas *canvas, M5EPD_Canvas* selected_icon, M5EPD_Canvas* unselected_icon)
+void setup_gui(GuiElements gui_elements)
 {
+    //M5EPD_Canvas *canvas, M5EPD_Canvas *top_bar, M5EPD_Canvas* selected_icon, M5EPD_Canvas* unselected_icon
     const int textSize=2;
-    canvas->createCanvas(540, 960);
-    canvas->setTextSize(textSize);
-    canvas->setTextFont(2);
-    int icon_w=canvas->textWidth(">");
-    int icon_h=canvas->fontHeight();
-    selected_icon->createCanvas(icon_w,icon_h);
-    unselected_icon->createCanvas(icon_w,icon_h);
-    canvas->setTextColor(15);
-    canvas->drawString(">",0,0);
-    copyRect(canvas,selected_icon,icon_w,icon_h);
-    canvas->setTextColor(0);
-    canvas->drawString(">",0,0);
-    canvas->setTextColor(15);
-    copyRect(canvas,unselected_icon,icon_w,icon_h);
+    gui_elements.canvas.createCanvas(540, 960);
+    gui_elements.canvas.setTextSize(textSize);
+    gui_elements.canvas.setTextFont(2);
+    int icon_w=gui_elements.canvas.textWidth(">");
+    int icon_h=gui_elements.canvas.fontHeight();
+    gui_elements.selected_icon.createCanvas(icon_w,icon_h);
+    gui_elements.unselected_icon.createCanvas(icon_w,icon_h);
+    gui_elements.canvas.setTextColor(15);
+    gui_elements.canvas.drawString(">",0,0);
+    copyRect(&gui_elements.canvas,&gui_elements.selected_icon,icon_w,icon_h);
+    gui_elements.canvas.setTextColor(0);
+    gui_elements.canvas.drawString(">",0,0);
+    gui_elements.canvas.setTextColor(15);
+    copyRect(&gui_elements.canvas,&gui_elements.unselected_icon,icon_w,icon_h);
+
+    gui_elements.top_bar.createCanvas(540,32);
+    gui_elements.top_bar.setTextFont(1);
+
+    gui_elements.paginator.canvasOffsetY = gui_elements.top_bar.height();
 }
 
-void gui_draw(M5EPD_Canvas &canvas)
+void menu_bar_draw(M5EPD_Canvas &canvas, Paginator &paginator)
 {
+    uint16_t color = 0x0000;
+    uint16_t bgcolor = 0xffff;
+    canvas.clear();
+    
+    canvas.setTextFont(2);
+    canvas.fillCanvas(bgcolor);
+    canvas.drawLine(0,30,canvas.width(),30,color);
+    canvas.setTextFont(2);
+    canvas.setTextColor(color,bgcolor);
+    canvas.drawString("inkeink reader",5,5);
+    char pageInfo[30];
+    sprintf(pageInfo,"%d/%d",paginator.currentPageIndex+1,paginator.numPages);
+    //int width = canvas.textWidth(pageInfo);
+    canvas.setTextDatum(TR_DATUM);
+    canvas.drawString(pageInfo,canvas.width()-5,5);
+    canvas.setTextDatum(TL_DATUM);
     canvas.pushCanvas(0, 0, UPDATE_MODE_DU);
+    
 }
-
-
 
 // void add_choice_option(const char* name)
 // {

@@ -1,24 +1,16 @@
 #include <Arduino.h>
 #include <Esp.h>
-#include <M5EPD.h>
 #include "FS.h"
 #include "SPIFFS.h"
-#include "gui-utils.h"
+#include "main.hpp"
 #include "ink-player.h"
-#include "page.hpp"
+
 #ifndef PIO_UNIT_TESTING
-char* story_filename;
 
-M5EPD_Canvas canvas(&M5.EPD);
-M5EPD_Canvas selected_icon(&M5.EPD);
-M5EPD_Canvas unselected_icon(&M5.EPD);
 
-Paginator paginator = Paginator(canvas);
-
-void select_story();
 
 void setup()
-{
+{    
     Serial.begin(115200);
     
     if (!SPIFFS.begin()) {
@@ -32,7 +24,7 @@ void setup()
 
     Serial.println("Test Done");
 
-    M5.begin(true,false,true,false,false);
+    M5.begin(true,true,true,false,false);
     M5.EPD.SetRotation(90);
     M5.TP.SetRotation(90);
     M5.EPD.Clear(true);
@@ -40,7 +32,7 @@ void setup()
     
     //load_font("/Roboto-Black.ttf");
     
-    setup_gui(&canvas,&selected_icon,&unselected_icon);
+    setup_gui(gui_elements);
 
     select_story();
 }
@@ -51,7 +43,7 @@ void loop()
 {
     delay(20);
     M5.update();
-    if(check_selection(paginator,canvas,selected_icon,unselected_icon,selected_choice)){
+    if(check_selection(gui_elements,selected_choice)){
         if(selected_choice==-1){
             if(!paginator.hasChoices()){
                 select_story();
@@ -65,23 +57,23 @@ void loop()
         selected_choice = -1;
         //clear_choices();
         contine_story(paginator);
-        draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);       
+        menu_bar_draw(top_bar,paginator); 
+        draw_selection_cursor(gui_elements,selected_choice);       
         Serial.print("free mem:");
         Serial.println(heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
-    }
-    
-    
+    }    
 }
 
 void select_story()
 {
     //gui_clear(canvas);
-    paginator.clear();
-    story_filename=select_file(canvas, paginator, "Select Story",selected_icon,unselected_icon);
+    paginator.marginTop=5;
+    paginator.clear();    
+    story_filename=select_file(gui_elements, "Select Story");
     load_story(story_filename);
     free(story_filename);
     contine_story(paginator);
-    draw_selection_cursor(paginator,selected_icon,unselected_icon,selected_choice);
+    draw_selection_cursor(gui_elements,selected_choice);
         
 }
 
