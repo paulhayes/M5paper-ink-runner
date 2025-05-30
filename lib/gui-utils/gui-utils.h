@@ -2,7 +2,23 @@
 #define __GUI_UTILS_H
 
 #include <page.hpp>
-#include "gui-utils.h"
+#include <string>
+
+struct TopBarState 
+{
+    int32_t lastBattery;
+    int32_t lastPage;
+    size_t titleHash;
+
+    void setTitle(const char *title){
+        titleHash = std::hash<std::string_view>{}(title);
+    }
+};
+
+inline bool operator==(const TopBarState &lhs, const TopBarState &rhs){
+    return memcmp(&lhs,&rhs,sizeof(TopBarState))==0;
+}
+
 
 struct GuiElements 
 {
@@ -11,7 +27,9 @@ struct GuiElements
     M5EPD_Canvas &top_bar;
     M5EPD_Canvas &selected_icon;
     M5EPD_Canvas &unselected_icon;
+    TopBarState top_bar_state;
 };
+
 
 typedef std::function<int16_t(const char*)> widthCallbackFunc;
 // void next_line();
@@ -26,7 +44,7 @@ char* wrap_one_line(char *&block_c, int max_line_width, widthCallbackFunc width_
 const char* word_wrap(const char *line_c);
 //bool cursor_inside_canvas();
 //void gui_clear(M5EPD_Canvas &canvas);
-void menu_bar_draw(M5EPD_Canvas &canvas, Paginator &paginator);
+void menu_bar_draw(GuiElements gui_elements);
 // int get_num_choices();
 //void add_choice_option(const char* name);
 // void add_choice_option(M5EPD_Canvas &canvas, const char* name,int x, int y);

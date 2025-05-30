@@ -24,7 +24,7 @@ void setup()
 
     Serial.println("Test Done");
 
-    M5.begin(true,true,true,false,false);
+    M5.begin(true,true,true,true,false);
     M5.EPD.SetRotation(90);
     M5.TP.SetRotation(90);
     M5.EPD.Clear(true);
@@ -57,7 +57,7 @@ void loop()
         selected_choice = -1;
         //clear_choices();
         contine_story(paginator);
-        menu_bar_draw(top_bar,paginator); 
+        menu_bar_draw(gui_elements); 
         draw_selection_cursor(gui_elements,selected_choice);       
         Serial.print("free mem:");
         Serial.println(heap_caps_get_free_size(MALLOC_CAP_DEFAULT));

@@ -117,7 +117,7 @@ bool check_selection(GuiElements gui_elements, int &current_choice)
         choice_made=true;
     }
     if(redraw_selection){
-        menu_bar_draw(gui_elements.top_bar,gui_elements.paginator);
+        menu_bar_draw(gui_elements);
         draw_selection_cursor(gui_elements,current_choice);        
     }
     return choice_made;
@@ -341,6 +341,7 @@ void copyRect(M5EPD_Canvas *src, M5EPD_Canvas *dst, int w, int h)
     }
 }
 
+
 void setup_gui(GuiElements gui_elements)
 {
     //M5EPD_Canvas *canvas, M5EPD_Canvas *top_bar, M5EPD_Canvas* selected_icon, M5EPD_Canvas* unselected_icon
@@ -366,25 +367,45 @@ void setup_gui(GuiElements gui_elements)
     gui_elements.paginator.canvasOffsetY = gui_elements.top_bar.height();
 }
 
-void menu_bar_draw(M5EPD_Canvas &canvas, Paginator &paginator)
+void draw_battery(M5EPD_Canvas &canvas,uint32_t battery,int x, int y)
 {
     uint16_t color = 0x0000;
     uint16_t bgcolor = 0xffff;
-    canvas.clear();
+    int w = 80;
+    int h = 20;
+
+    canvas.drawRect(x,y,w,24,color);
+    canvas.fillRect(x,y,w*battery/100,24,color);
+}
+
+void menu_bar_draw(GuiElements gui_elements)
+{
+    uint16_t color = 0x0000;
+    uint16_t bgcolor = 0xffff;
+    gui_elements.canvas.clear();
     
-    canvas.setTextFont(2);
-    canvas.fillCanvas(bgcolor);
-    canvas.drawLine(0,30,canvas.width(),30,color);
-    canvas.setTextFont(2);
-    canvas.setTextColor(color,bgcolor);
-    canvas.drawString("inkeink reader",5,5);
+    gui_elements.canvas.setTextFont(2);
+    gui_elements.canvas.fillCanvas(bgcolor);
+    gui_elements.canvas.drawLine(0,30,gui_elements.canvas.width(),30,color);
+
+    int32_t batteryPercent = 100*min(M5.getBatteryVoltage(),(uint32_t)4200)/4200;
+    Serial.printf("Battery Voltage:%d",M5.getBatteryVoltage());
+
+    if( gui_elements.top_bar_state.lastBattery != batteryPercent ){
+        draw_battery(gui_elements.canvas,batteryPercent,120,8);
+        gui_elements.top_bar_state.lastBattery = batteryPercent;
+    }
+
+    gui_elements.canvas.setTextFont(2);
+    gui_elements.canvas.setTextColor(color,bgcolor);
+    gui_elements.canvas.drawString("inkeink reader",5,5);
     char pageInfo[30];
-    sprintf(pageInfo,"%d/%d",paginator.currentPageIndex+1,paginator.numPages);
+    sprintf(pageInfo,"%d/%d",gui_elements.paginator.currentPageIndex+1,gui_elements.paginator.numPages);
     //int width = canvas.textWidth(pageInfo);
-    canvas.setTextDatum(TR_DATUM);
-    canvas.drawString(pageInfo,canvas.width()-5,5);
-    canvas.setTextDatum(TL_DATUM);
-    canvas.pushCanvas(0, 0, UPDATE_MODE_DU);
+    gui_elements.canvas.setTextDatum(TR_DATUM);
+    gui_elements.canvas.drawString(pageInfo,gui_elements.canvas.width()-5,5);
+    gui_elements.canvas.setTextDatum(TL_DATUM);
+    gui_elements.canvas.pushCanvas(0, 0, UPDATE_MODE_DU);
     
 }
 

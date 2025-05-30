@@ -18,5 +18,4 @@ Paginator paginator = Paginator(canvas);
 
 GuiElements gui_elements = {paginator,canvas,top_bar,selected_icon,unselected_icon};
 
-
 #endif
