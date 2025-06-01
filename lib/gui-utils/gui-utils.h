@@ -6,8 +6,8 @@
 
 struct TopBarState 
 {
-    int32_t lastBattery;
-    int32_t lastPage;
+    int32_t battery;
+    int32_t pageIndex;
     size_t titleHash;
 
     void setTitle(const char *title){
@@ -28,6 +28,7 @@ struct GuiElements
     M5EPD_Canvas &selected_icon;
     M5EPD_Canvas &unselected_icon;
     TopBarState top_bar_state;
+    int cursorSelctionIndex=-1;
 };
 
 
@@ -36,9 +37,9 @@ typedef std::function<int16_t(const char*)> widthCallbackFunc;
 // int line_height();
 // bool vertical_overflow();
 void setup_gui(GuiElements gui_elements); //M5EPD_Canvas *canvas, M5EPD_Canvas *top_bar, M5EPD_Canvas* selected_icon, M5EPD_Canvas* unselected_icon
-void draw_selection_cursor(GuiElements gui_elements, int selected_choice);
+void draw_selection_cursor(GuiElements &gui_elements, int selected_choice);
 char* select_file(GuiElements gui_elements, const char* title);
-bool check_selection(GuiElements gui_elements, int &current_choice);
+bool check_selection(GuiElements &gui_elements, int &current_choice);
 //char* wrap_one_line(M5EPD_Canvas &canvas,const char *block_c);
 char* wrap_one_line(char *&block_c, int max_line_width, widthCallbackFunc width_callback);
 const char* word_wrap(const char *line_c);

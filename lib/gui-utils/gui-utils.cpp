@@ -24,42 +24,72 @@
 // }
 
 
-void draw_selection_cursor(GuiElements gui_elements, int selected_choice)
+void draw_selection_cursor(GuiElements &gui_elements, int selected_choice)
 {
-
+    
     int numChoices = gui_elements.paginator.currentPage().getNumSelectionAreas();
-    for(int i=0;i<numChoices;i++){
-        M5EPD_Canvas* icon = (i==selected_choice)? &gui_elements.selected_icon: &gui_elements.unselected_icon;
-        SelectionArea choice = gui_elements.paginator.currentPage().getSelectionArea(i);
-        Serial.print("Choice ");
-        Serial.print(i);
-        Serial.print(": ");
-        Serial.print(choice.minX);
-        Serial.print(",");
-        Serial.print(choice.minY);
-        Serial.print(" ");
-        Serial.print(choice.maxX);
-        Serial.print(",");
-        Serial.print(choice.maxY);
-        Serial.print(" ");
-        Serial.println(i==selected_choice?"SELECTED":"");
-        icon->pushCanvas(choice.minX-icon->width(),choice.minY+gui_elements.top_bar.height(),UPDATE_MODE_DU4);
+    SelectionArea *previous_choice = NULL;
+    SelectionArea *current_choice = NULL;
+    if(selected_choice==gui_elements.cursorSelctionIndex){
+        return;
     }
+    for(int i=0;i<numChoices;i++){
+        // M5EPD_Canvas* icon = (i==selected_choice)? &gui_elements.selected_icon: &gui_elements.unselected_icon;
+        SelectionArea *choice = &gui_elements.paginator.currentPage().getSelectionArea(i);
+        if(i==gui_elements.cursorSelctionIndex){
+            previous_choice=choice;
+        }
+        if(i==selected_choice){
+            current_choice=choice;
+        }
+        // Serial.print("Choice ");
+        // Serial.print(i);
+        // Serial.print(": ");
+        // Serial.print(choice->minX);
+        // Serial.print(",");
+        // Serial.print(choice->minY);
+        // Serial.print(" ");
+        // Serial.print(choice->maxX);
+        // Serial.print(",");
+        // Serial.print(choice->maxY);
+        // Serial.print(" ");
+        // Serial.print(i==selected_choice?"SELECTED ":" ");
+        // Serial.println(i==gui_elements.cursorSelctionIndex?"PREVIOUS":"");
+    }
+
+    if(current_choice!=NULL){
+        //Serial.println("Drawing cursor");
+        gui_elements.selected_icon.pushCanvas(current_choice->minX-gui_elements.selected_icon.width(),current_choice->minY+gui_elements.top_bar.height(),UPDATE_MODE_DU4);
+    }
+    if(previous_choice!=NULL){
+        //Serial.println("Removing old cursor");
+        gui_elements.unselected_icon.pushCanvas(previous_choice->minX-gui_elements.unselected_icon.width(),previous_choice->minY+gui_elements.top_bar.height(),UPDATE_MODE_DU4);
+    }
+
+    gui_elements.cursorSelctionIndex = selected_choice;
+    // Serial.print(selected_choice);
+    // Serial.print(" ");
+    // Serial.println(gui_elements.cursorSelctionIndex);
+
+
 }
 
-bool check_selection(GuiElements gui_elements, int &current_choice)
+bool check_selection(GuiElements &gui_elements, int &current_choice)
 {
     int num_choices = gui_elements.paginator.currentPage().getNumSelectionAreas();
     bool choice_made = false;
     bool redraw_selection = false;
     M5.TP.update();
-    if(M5.TP.available() && !M5.TP.isFingerUp()){
-        
+    if(M5.TP.available() && M5.TP.getFingerNum()>0 ){
         tp_finger_t finger = M5.TP.readFinger(0);
-        // Serial.print("x=");
+        bool fingerUp = M5.TP.isFingerUp();
+        // Serial.print(M5.TP.getFingerNum());
+        // Serial.print(" x=");
         // Serial.print(finger.x);
         // Serial.print("y=");
         // Serial.print(finger.y);
+        // Serial.print(" ");
+        // Serial.print(fingerUp);
         // Serial.println("");
         
         for(int i=0;i<num_choices;i++){
@@ -67,15 +97,16 @@ bool check_selection(GuiElements gui_elements, int &current_choice)
             selectionArea.minY+=gui_elements.top_bar.height();
             selectionArea.maxY+=gui_elements.top_bar.height();
             bool inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
-            if(M5.TP.isFingerUp() && inY && current_choice==i){
-                //finger = M5.TP.readFinger(0);
-                //M5.TP.update();
+            if(fingerUp && inY && current_choice==i){
+                Serial.printf("E%d\n",i);
                 choice_made = true;
+                redraw_selection=true;
+                M5.TP.flush();
             }
             else if(inY && current_choice!=i){
+                Serial.printf("S%d\n",i);
                 current_choice=i;
                 redraw_selection=true;
-                
                 // inY = finger.y>selectionArea.minY && finger.y<selectionArea.maxY;
                 // if(inY){
                 //     Serial.println("finger up inside of bounds");
@@ -84,9 +115,11 @@ bool check_selection(GuiElements gui_elements, int &current_choice)
                 // Serial.println("finger up outside of bounds");
             }
         }
+        
     }
     else if( M5.BtnL.wasPressed() ){
         Serial.println("up");
+        M5.TP.flush();
         redraw_selection=true;
         current_choice--;
         if(current_choice<0){
@@ -100,6 +133,7 @@ bool check_selection(GuiElements gui_elements, int &current_choice)
 //        draw_selection_cursor(paginator,selected_icon,unselected_icon,current_choice);
     }
     else if(M5.BtnR.wasPressed()){
+        M5.TP.flush();
         Serial.println("down");
         redraw_selection=true;
         current_choice++;
@@ -345,8 +379,9 @@ void copyRect(M5EPD_Canvas *src, M5EPD_Canvas *dst, int w, int h)
 void setup_gui(GuiElements gui_elements)
 {
     //M5EPD_Canvas *canvas, M5EPD_Canvas *top_bar, M5EPD_Canvas* selected_icon, M5EPD_Canvas* unselected_icon
+    const int top_bar_height = 32;
     const int textSize=2;
-    gui_elements.canvas.createCanvas(540, 960);
+    gui_elements.canvas.createCanvas(540, 960-top_bar_height);
     gui_elements.canvas.setTextSize(textSize);
     gui_elements.canvas.setTextFont(2);
     int icon_w=gui_elements.canvas.textWidth(">");
@@ -361,7 +396,7 @@ void setup_gui(GuiElements gui_elements)
     gui_elements.canvas.setTextColor(15);
     copyRect(&gui_elements.canvas,&gui_elements.unselected_icon,icon_w,icon_h);
 
-    gui_elements.top_bar.createCanvas(540,32);
+    gui_elements.top_bar.createCanvas(540,top_bar_height);
     gui_elements.top_bar.setTextFont(1);
 
     gui_elements.paginator.canvasOffsetY = gui_elements.top_bar.height();
@@ -371,41 +406,51 @@ void draw_battery(M5EPD_Canvas &canvas,uint32_t battery,int x, int y)
 {
     uint16_t color = 0x0000;
     uint16_t bgcolor = 0xffff;
-    int w = 80;
-    int h = 20;
+    int h = 18;
+    int w = h*2;
+    int p=2;
+    int battery_top = 6;
 
-    canvas.drawRect(x,y,w,24,color);
-    canvas.fillRect(x,y,w*battery/100,24,color);
+    canvas.fillRect(x-4,y+h/2-battery_top/2,4,battery_top,color);
+    canvas.fillRect(x,y,w,h,color);
+    canvas.fillRect(x+p,y+p,w*battery/100-2*p,h-2*p,bgcolor);
 }
 
 void menu_bar_draw(GuiElements gui_elements)
 {
-    uint16_t color = 0x0000;
-    uint16_t bgcolor = 0xffff;
-    gui_elements.canvas.clear();
-    
-    gui_elements.canvas.setTextFont(2);
-    gui_elements.canvas.fillCanvas(bgcolor);
-    gui_elements.canvas.drawLine(0,30,gui_elements.canvas.width(),30,color);
-
     int32_t batteryPercent = 100*min(M5.getBatteryVoltage(),(uint32_t)4200)/4200;
-    Serial.printf("Battery Voltage:%d",M5.getBatteryVoltage());
+    char title[] =  "inkeink reader";
 
-    if( gui_elements.top_bar_state.lastBattery != batteryPercent ){
-        draw_battery(gui_elements.canvas,batteryPercent,120,8);
-        gui_elements.top_bar_state.lastBattery = batteryPercent;
+    TopBarState state = {
+        batteryPercent,
+        gui_elements.paginator.currentPageIndex+1
+    };
+    state.setTitle(title);
+
+    Serial.printf("Battery Voltage:%d\n",M5.getBatteryVoltage());
+
+    if(state==gui_elements.top_bar_state){
+        return;
     }
 
-    gui_elements.canvas.setTextFont(2);
-    gui_elements.canvas.setTextColor(color,bgcolor);
-    gui_elements.canvas.drawString("inkeink reader",5,5);
+    uint16_t color = 0x0000;
+    uint16_t bgcolor = 0xffff;
+    gui_elements.top_bar.clear();
+    gui_elements.top_bar.setTextFont(2);
+    gui_elements.top_bar.fillCanvas(bgcolor);
+    gui_elements.top_bar.drawLine(0,30,gui_elements.top_bar.width(),30,color);
+
+    draw_battery(gui_elements.top_bar,batteryPercent,120,8);
+
+    gui_elements.top_bar.setTextColor(color,bgcolor);
+    gui_elements.top_bar.drawString("inkeink reader",5,5);
     char pageInfo[30];
     sprintf(pageInfo,"%d/%d",gui_elements.paginator.currentPageIndex+1,gui_elements.paginator.numPages);
     //int width = canvas.textWidth(pageInfo);
-    gui_elements.canvas.setTextDatum(TR_DATUM);
-    gui_elements.canvas.drawString(pageInfo,gui_elements.canvas.width()-5,5);
-    gui_elements.canvas.setTextDatum(TL_DATUM);
-    gui_elements.canvas.pushCanvas(0, 0, UPDATE_MODE_DU);
+    gui_elements.top_bar.setTextDatum(TR_DATUM);
+    gui_elements.top_bar.drawString(pageInfo,gui_elements.canvas.width()-5,5);
+    gui_elements.top_bar.setTextDatum(TL_DATUM);
+    gui_elements.top_bar.pushCanvas(0, 0, UPDATE_MODE_DU);
     
 }
 

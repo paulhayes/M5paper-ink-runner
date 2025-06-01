@@ -69,10 +69,12 @@ void select_story()
     //gui_clear(canvas);
     paginator.marginTop=5;
     paginator.clear();    
+    menu_bar_draw(gui_elements);
     story_filename=select_file(gui_elements, "Select Story");
     load_story(story_filename);
     free(story_filename);
     contine_story(paginator);
+    menu_bar_draw(gui_elements); 
     draw_selection_cursor(gui_elements,selected_choice);
         
 }
